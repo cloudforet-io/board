@@ -1,0 +1,1 @@
+from spaceone.board.model.board_model import Board

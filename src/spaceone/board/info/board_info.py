@@ -10,11 +10,11 @@ def BoardInfo(board_vo: Board, minimal=False):
     info = {
         'board_id': board_vo.board_id,
         'name': board_vo.name,
-        'categories': board_vo.categories
     }
 
     if not minimal:
         info.update({
+            'categories': board_vo.categories,
             'tags': change_struct_type(board_vo.tags),
             'created_at': utils.datetime_to_iso8601(board_vo.created_at)
         })

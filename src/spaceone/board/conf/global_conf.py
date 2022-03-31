@@ -1,18 +1,12 @@
 # Database Settings
 DATABASES = {
     'default': {
-        # MongoDB Example
-        # 'host': '<host>',
-        # 'port': 27017,
-        # 'db': '<db>',
-        # 'username': '<user>',
-        # 'password': '<password>'
-    },
-    # 'local': {
-    #     'backend': 'spaceone.core.cache.local_cache.LocalCache',
-    #     'max_size': 128,
-    #     'ttl': 86400
-    # }
+        'db': 'monitoring',
+        'host': 'localhost',
+        'port': 27017,
+        'username': '',
+        'password': ''
+    }
 }
 
 # Cache Settings

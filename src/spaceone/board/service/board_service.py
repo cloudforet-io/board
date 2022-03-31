@@ -1,5 +1,9 @@
+import logging
+
 from spaceone.core.service import *
 from spaceone.board.manager.board_manager import BoardManager
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
@@ -10,25 +14,125 @@ class BoardService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.event_rule_mgr: BoardManager = self.locator.get_manager('BoardManager')
+        self.board_mgr: BoardManager = self.locator.get_manager('BoardManager')
 
+    @transaction
+    @check_required(['name'])
     def create(self, params):
-        pass
+        """Create board
 
+        Args:
+            params (dict): {
+                'name': 'str',
+                'categories': 'list',
+                'tags': 'dict'
+            }
+
+        Returns:
+            board_vo (object)
+        """
+
+        return self.board_mgr.create_board(params)
+
+    @transaction  # TODO: 권한처리 해야함
+    @check_required(['board_id'])
     def update(self, params):
-        pass
+        """Update board
 
+                Args:
+                    params (dict): {
+                        'board_id': 'str,
+                        'name': 'str,
+                        'tags': 'dict'
+                    }
+
+                Returns:
+                    board_vo (object)
+                """
+        return self.board_mgr.update_board(params)
+
+    @transaction
+    @check_required(['board_id', 'categories'])
     def set_categories(self, params):
-        pass
+        """Create board
 
+                Args:
+                    params (dict): {
+                        'board_id': 'str',
+                        'categories': 'list'
+                    }
+
+                Returns:
+                    board_vo (object)
+                """
+        return self.board_mgr.update_board(params)
+
+    @transaction
+    @check_required(['board_id'])
     def delete(self, params):
-        pass
+        """Delete board
 
+                Args:
+                    params (dict): {
+                        'webhook_id': 'str',
+                    }
+
+                Returns:
+                    None
+                """
+
+        self.board_mgr.delete_board(params)
+
+    @transaction
+    @check_required(['board_id'])
     def get(self, params):
-        pass
+        """Get board
 
+                Args:
+                    params (dict): {
+                        'board_id': 'str',
+                        'only': 'list'
+                    }
+
+                Returns:
+                    board_vo (object)
+                """
+
+        return self.board_mgr.get_board(params['board_id'])
+
+    @transaction
+    @append_query_filter(['board_id', 'name'])
     def list(self, params):
-        pass
+        """List boards
 
+                Args:
+                    params (dict): {
+                        'board_id': 'str',
+                        'name': 'str',
+                        'query': 'dict'
+                    }
+
+                Returns:
+                    board_vos (object)
+                    total_count
+                """
+
+        query = params.get('query', {})
+        return self.board_mgr.list_boards(query)
+
+    @transaction
+    @check_required(['query'])
     def stat(self, params):
-        pass
+        """Stat boards
+
+                Args:
+                    params (dict): {
+                        'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                    }
+
+                Returns:
+                    values (list) : 'list of statistics data'
+                """
+
+        query = params.get('query', {})
+        return self.board_mgr.stat_boards(query)
