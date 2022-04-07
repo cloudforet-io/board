@@ -10,12 +10,12 @@ class PostOptions(EmbeddedDocument):
 
 class Post(MongoModel):
     board_id = StringField(max_length=40)
-    post_id = StringField(max_length=40, generate_id='po', unique=True)
+    post_id = StringField(max_length=40, generate_id='post', unique=True)
     category = StringField()
     title = StringField(max_length=255)
     contents = StringField()
     options = EmbeddedDocumentField(PostOptions, default=PostOptions)
-    view_count = IntField()
+    view_count = IntField(default=0)
     writer = StringField()
     scope = StringField(max_length=20, choices=('SYSTEM', 'DOMAIN'))
     domain_id = StringField(max_length=40, default=None, null=True)
@@ -34,15 +34,7 @@ class Post(MongoModel):
         'minimal_fields': [
             'board_id',
             'post_id',
-            'category',
-            'title',
-            'contents',
-            'view_count',
-            'writer',
-            'scope'
         ],
-        # 'change_query_keys': {
-        # },
         'ordering': [
             '-created_at'
         ],
@@ -51,7 +43,6 @@ class Post(MongoModel):
             'post_id',
             'category',
             'writer',
-            'scope',
             'domain_id',
             'user_id'
         ]

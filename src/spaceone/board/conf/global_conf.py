@@ -1,7 +1,7 @@
 # Database Settings
 DATABASES = {
     'default': {
-        'db': 'monitoring',
+        'db': 'board',
         'host': 'localhost',
         'port': 27017,
         'username': '',

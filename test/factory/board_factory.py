@@ -1,14 +1,14 @@
 import factory
 from spaceone.core import utils
 
-from spaceone.board.model.board_model import Board
+from spaceone.board.model import Board
 
 
 class BoardFactory(factory.mongoengine.MongoEngineFactory):
     class Meta:
         model = Board
 
-    board_id = factory.LazyAttribute(lambda o: utils.generate_id('bo'))
+    board_id = factory.LazyAttribute(lambda o: utils.generate_id('board'))
     name = factory.LazyAttribute(lambda o: utils.random_string())
     categories = ['a', 'b', 'c']
     tags = {'x': 'y'}

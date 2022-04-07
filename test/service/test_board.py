@@ -5,9 +5,8 @@ from spaceone.core import config, utils
 from spaceone.core.transaction import Transaction
 from spaceone.core.unittest.result import print_data
 
-from spaceone.board.error import ERROR_BOARD_CATEGORIES_NOT_ALLOW_EMPTY
 from spaceone.board.info import BoardInfo, BoardsInfo, StatisticsInfo
-from spaceone.board.model.board_model import Board
+from spaceone.board.model import Board
 from spaceone.board.service.board_service import BoardService
 from test.factory.board_factory import BoardFactory
 
@@ -23,7 +22,7 @@ class TestBoardService(unittest.TestCase):
 
         cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
-            'service': 'Board',
+            'service': 'board',
             'api_class': 'Board'
         })
         super().setUpClass()

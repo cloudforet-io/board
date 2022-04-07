@@ -16,7 +16,7 @@ class BoardService(BaseService):
         super().__init__(*args, **kwargs)
         self.board_mgr: BoardManager = self.locator.get_manager('BoardManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['name'])
     def create(self, params):
         """Create board
@@ -34,7 +34,7 @@ class BoardService(BaseService):
 
         return self.board_mgr.create_board(params)
 
-    @transaction  # TODO: 권한처리 해야함
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['board_id'])
     def update(self, params):
         """Update board
@@ -51,7 +51,7 @@ class BoardService(BaseService):
                 """
         return self.board_mgr.update_board(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['board_id', 'categories'])
     def set_categories(self, params):
         """Create board
@@ -67,7 +67,7 @@ class BoardService(BaseService):
                 """
         return self.board_mgr.update_board(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'SYSTEM'})
     @check_required(['board_id'])
     def delete(self, params):
         """Delete board
@@ -83,7 +83,10 @@ class BoardService(BaseService):
 
         self.board_mgr.delete_board(params)
 
-    @transaction
+    @transaction(append_meta={
+        'authorization.scope': 'DOMAIN',
+        'authorization.require_domain_id': True
+    })
     @check_required(['board_id'])
     def get(self, params):
         """Get board
@@ -100,7 +103,10 @@ class BoardService(BaseService):
 
         return self.board_mgr.get_board(params['board_id'])
 
-    @transaction
+    @transaction(append_meta={
+        'authorization.scope': 'DOMAIN',
+        'authorization.require_domain_id': True
+    })
     @append_query_filter(['board_id', 'name'])
     def list(self, params):
         """List boards
@@ -120,7 +126,10 @@ class BoardService(BaseService):
         query = params.get('query', {})
         return self.board_mgr.list_boards(query)
 
-    @transaction
+    @transaction(append_meta={
+        'authorization.scope': 'DOMAIN',
+        'authorization.require_domain_id': True
+    })
     @check_required(['query'])
     def stat(self, params):
         """Stat boards
