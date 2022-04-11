@@ -23,7 +23,7 @@ class PostService(BaseService):
         'authorization.scope': 'DOMAIN',
         'authorization.require_domain_id': True
     })
-    @check_required(['board_id', 'title', 'contents', 'user_id'])
+    @check_required(['board_id', 'title', 'contents'])
     def create(self, params):
         """Create post
 
@@ -64,7 +64,7 @@ class PostService(BaseService):
         'authorization.scope': 'DOMAIN',
         'authorization.require_domain_id': True
     })
-    @check_required(['board_id', 'post_id', 'domain_id'])
+    @check_required(['board_id', 'post_id'])
     def update(self, params):
         """Update post
 
@@ -84,7 +84,7 @@ class PostService(BaseService):
                     post_vo (object)
         """
 
-        post_vo = self.post_mgr.get_post(params['board_id'], params['post_id'], params['domain_id'])
+        post_vo = self.post_mgr.get_post(params['board_id'], params['post_id'], params.get('domain_id'))
 
         if category := params.get('category'):
             board_vo = self.board_mgr.get_board(params['board_id'])
@@ -112,7 +112,7 @@ class PostService(BaseService):
         'authorization.scope': 'DOMAIN',
         'authorization.require_domain_id': True
     })
-    @check_required(['board_id', 'post_id', 'domain_id'])
+    @check_required(['board_id', 'post_id'])
     def delete(self, params):
         """Delete post
 
@@ -129,7 +129,7 @@ class PostService(BaseService):
 
         board_id = params['board_id']
         post_id = params['post_id']
-        domain_id = params['domain_id']
+        domain_id = params.get('domain_id')
 
         post_vo = self.post_mgr.get_post(board_id, post_id, domain_id)
 
@@ -139,7 +139,7 @@ class PostService(BaseService):
         'authorization.scope': 'DOMAIN',
         'authorization.require_domain_id': True
     })
-    @check_required(['board_id', 'post_id', 'domain_id'])
+    @check_required(['board_id', 'post_id'])
     def get(self, params):
         """Get post
 
@@ -157,20 +157,19 @@ class PostService(BaseService):
 
         board_id = params['board_id']
         post_id = params['post_id']
-        domain_id = params['domain_id']
+        domain_id = params.get('domain_id')
 
         post_vo = self.post_mgr.get_post(board_id, post_id, domain_id, params.get('only'))
-
-        self._increase_view_count(post_vo)
+        self.post_mgr.increase_view_count(post_vo)
 
         return post_vo
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
-        'authorization.require_domain_id': True
+        'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
     })
-    @check_required(['board_id', 'domain_id'])
-    @append_query_filter(['post_id', 'category', 'writer', 'user_id'])
+    @check_required(['board_id'])
+    @append_query_filter(['post_id', 'category', 'writer', 'user_id', 'domain_id', 'user_domains'])
     def list(self, params):
         """List posts
 
@@ -182,7 +181,8 @@ class PostService(BaseService):
                         'writer': 'str',
                         'user_id': 'str',
                         'domain_id': 'str',
-                        'query': 'dict'
+                        'query': 'dict',
+                        'user_domains': 'list' // from meta
                     }
 
                 Returns:
@@ -190,22 +190,22 @@ class PostService(BaseService):
                     total_count
         """
 
-        params['domain_id'] = self.transaction.get_meta('domain_id')
-
         query = params.get('query', {})
         return self.post_mgr.list_boards(query)
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
-        'authorization.require_domain_id': True
+        'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
     })
-    @check_required(['query', 'domain_id'])
+    @check_required(['query'])
+    @append_query_filter(['user_domains'])
     def stat(self, params):
         """List posts
 
                 Args:
                     params (dict): {
-                        'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                        'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                        'user_domains': 'list' // from meta
                     }
 
                 Returns:
@@ -214,10 +214,3 @@ class PostService(BaseService):
 
         query = params.get('query', {})
         return self.post_mgr.stat_boards(query)
-
-    def _increase_view_count(self, post_vo):
-        params = {
-            'view_count': post_vo.view_count + 1
-        }
-
-        self.post_mgr.update_post_by_vo(params, post_vo)

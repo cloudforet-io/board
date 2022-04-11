@@ -20,6 +20,9 @@ class Board(MongoModel):
             'board_id',
             'name'
         ],
+        'change_query_keys': {
+            'user_domains': 'domain_id'
+        },
         'ordering': [
             'name'
         ],

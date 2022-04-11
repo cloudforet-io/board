@@ -37,14 +37,23 @@ class PostManager(BaseManager):
 
         return post_vo.update(params)
 
-    def get_post(self, board_id, post_id, domain_id, only=None):
-        return self.post_model.get(board_id=board_id, post_id=post_id, domain_id=domain_id, only=only)
+    def get_post(self, board_id, post_id, domain_id=None, only=None):
+        if domain_id:
+            scope = 'DOMAIN'
+        else:
+            scope = 'SYSTEM'
+
+        return self.post_model.get(board_id=board_id, post_id=post_id, domain_id=domain_id, scope=scope, only=only)
 
     def list_boards(self, query={}):
         return self.post_model.query(**query)
 
     def stat_boards(self, query):
         return self.post_model.stat(**query)
+
+    @staticmethod
+    def increase_view_count(post_vo):
+        post_vo.increment("view_count")
 
     @staticmethod
     def delete_post_vo(post_vo):

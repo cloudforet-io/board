@@ -85,7 +85,6 @@ class BoardService(BaseService):
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
-        'authorization.require_domain_id': True
     })
     @check_required(['board_id'])
     def get(self, params):
@@ -105,7 +104,6 @@ class BoardService(BaseService):
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
-        'authorization.require_domain_id': True
     })
     @append_query_filter(['board_id', 'name'])
     def list(self, params):
@@ -128,7 +126,6 @@ class BoardService(BaseService):
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
-        'authorization.require_domain_id': True
     })
     @check_required(['query'])
     def stat(self, params):
