@@ -35,7 +35,7 @@ GLOBAL:
   HANDLERS:
     authentication:
     - backend: spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler
-      uri: grpc://board:50051/v1/Domain/get_public_key
+      uri: grpc://identity:50051/v1/Domain/get_public_key
     authorization:
     - backend: spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler
-      uri: grpc://board:50051/v1/Authorization/verify
+      uri: grpc://identity:50051/v1/Authorization/verify
