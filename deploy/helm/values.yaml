@@ -60,28 +60,28 @@ volumes:
 global:
     shared: {}
     backend:
-        sidecar:
-        - name: mongos
-          image: mongo:4.4.0-bionic
-          command: [ 'mongos', '--config', '/mnt/mongos.yml', '--bind_ip_all' ]
-          volumeMounts:
-            - name: mongos-conf
-              mountPath: /mnt/mongos.yml
-              subPath: mongos.yml
-              readOnly: true
-            - name: mongo-shard-key
-              mountPath: /opt/mongos/mongo-shard.pem
-              subPath: mongodb-key-file.pem
-              readOnly: true
+        sidecar: []
+#        - name: mongos
+#          image: mongo:4.4.0-bionic
+#          command: [ 'mongos', '--config', '/mnt/mongos.yml', '--bind_ip_all' ]
+#          volumeMounts:
+#            - name: mongos-conf
+#              mountPath: /mnt/mongos.yml
+#              subPath: mongos.yml
+#              readOnly: true
+#            - name: mongo-shard-key
+#              mountPath: /opt/mongos/mongo-shard.pem
+#              subPath: mongodb-key-file.pem
+#              readOnly: true
 
-        volumes:
-        - name: mongo-shard-key
-          secret:
-              defaultMode: 0400
-              secretName: mongo-shard-key
-        - name: mongos-conf
-          configMap:
-              name: mongos-conf
+        volumes: []
+#        - name: mongo-shard-key
+#          secret:
+#              defaultMode: 0400
+#              secretName: mongo-shard-key
+#        - name: mongos-conf
+#          configMap:
+#              name: mongos-conf
 
 # Service
 #service:
@@ -97,7 +97,26 @@ global:
 #              protocol: TCP   
 #
 
+
+################################
+# volumeMount per deployment
+################################
+volumeMounts:
+    application_grpc: []
+    application_rest: []
+    application_scheduler: []
+    application_worker: []
+
+
+####################################
+# pod spec (append more pod spec)
+# example nodeSelect
+#
+# pod:
+#   spec:
+#     nodeSelector:
+#       application: my-node-group
+####################################
 pod:
-  spec:
-    nodeSelector:
-      Category: core
+  spec: {}
+
