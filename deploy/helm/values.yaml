@@ -85,18 +85,16 @@ global:
 #              name: mongos-conf
 
 # Service
-#service:
-#    grpc:
-#        type: LoadBalancer
-#        annotations:
-#            service.beta.kubernetes.io/aws-load-balancer-type: nlb
-#            external-dns.alpha.kubernetes.io/hostname: board.dev.spaceone.dev
-#        ports:
-#            - name: grpc
-#              port: 50051
-#              nodePort: 30055
-#              protocol: TCP   
-#
+service:
+    grpc:
+        type: ClusterIP
+        annotations:
+            nil: nil
+        ports:
+            - name: grpc
+              port: 50051
+              targetPort: 50051
+              protocol: TCP
 
 
 ################################
