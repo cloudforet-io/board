@@ -88,8 +88,7 @@ global:
 service:
     grpc:
         type: ClusterIP
-        annotations:
-            nil: nil
+        annotations: {}
         ports:
             - name: grpc
               port: 50051
