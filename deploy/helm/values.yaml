@@ -3,6 +3,7 @@
 ###############################
 enabled: true
 developer: false
+grpc: true
 scheduler: false
 worker: false
 name: board
