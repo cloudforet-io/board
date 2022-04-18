@@ -35,6 +35,9 @@ class Post(MongoModel):
             'board_id',
             'post_id',
         ],
+        'change_query_keys': {
+            'user_domains': 'domain_id'
+        },
         'ordering': [
             '-created_at'
         ],
