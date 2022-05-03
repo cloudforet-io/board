@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from spaceone.core.service import *
@@ -58,20 +59,17 @@ class PostService(BaseService):
             if category not in categories:
                 raise ERROR_INVALID_CATEGORY(category=category, categories=categories)
 
+        _options = {'is_pinned': False, 'is_popup': False}
+
         if options := params.get('options', {}):
             self._valid_options(options)
 
-            if len(options) == 1:
-                if 'is_pinned' in options:
-                    params.update({'options': {'is_pinned': options.get('is_pinned'),
-                                               'is_popup': False}})
-                if 'is_popup' in options:
-                    params.update({'options': {'is_pinned': False,
-                                               'is_popup': options.get('is_popup')}})
+            if 'is_pinned' in options:
+                _options.update({'is_pinned': options['is_pinned']})
+            if 'is_popup' in options:
+                _options.update({'is_popup': options['is_popup']})
 
-        else:
-            params.update({'options': {'is_pinned': False,
-                                       'is_popup': False}})
+        params['options'] = _options
 
         return self.post_mgr.create_board(params)
 
@@ -100,8 +98,6 @@ class PostService(BaseService):
         """
 
         post_vo = self.post_mgr.get_post(params['board_id'], params['post_id'], params.get('domain_id'))
-        is_pinned_by_post_vo = post_vo.options['is_pinned']
-        is_popup_by_post_vo = post_vo.options['is_popup']
 
         if category := params.get('category'):
             board_vo = self.board_mgr.get_board(params['board_id'])
@@ -112,13 +108,10 @@ class PostService(BaseService):
         if options := params.get('options', {}):
             self._valid_options(options)
 
-            if len(options) == 1:
-                if 'is_pinned' in options:
-                    params.update({'options': {'is_pinned': options.get('is_pinned'),
-                                               'is_popup': is_popup_by_post_vo}})
-                if 'is_popup' in options:
-                    params.update({'options': {'is_pinned': is_pinned_by_post_vo,
-                                               'is_popup': options.get('is_popup')}})
+            _options = copy.deepcopy(post_vo.options)
+            _options.update(options)
+
+            params['options'] = _options
 
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
@@ -240,9 +233,6 @@ class PostService(BaseService):
     @staticmethod
     def _valid_options(options):
         exact_keys = ['is_pinned', 'is_popup']
-
-        if len(exact_keys) > 2:
-            raise ERROR_INVALID_KEY_IN_OPTIONS
 
         for key in options:
             if key not in exact_keys:

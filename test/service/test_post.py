@@ -113,8 +113,9 @@ class TestPostService(unittest.TestCase):
             'title': 'test sample',
             'contents': 'This is test sample of contents.',
             'options': {
-                'is_p': True,
-                'is_popup': False
+                'is_pinned': True,
+                'is_popup': False,
+                'is_check': True
             },
             'writer': 'Kwon',
             'domain_id': self.domain_id,
