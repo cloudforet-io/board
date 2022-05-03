@@ -1,22 +1,12 @@
 import functools
 
 from spaceone.api.board.v1 import post_pb2
+from spaceone.core.pygrpc.message_type import change_struct_type
 from spaceone.core import utils
 
-from spaceone.board.model.post_model import Post, PostOptions
+from spaceone.board.model.post_model import Post
 
 __all__ = ['PostInfo', 'PostsInfo']
-
-
-def PostOptionsInfo(vo: PostOptions):
-    if vo is None:
-        return None
-    else:
-        info = {
-            'is_pinned': vo.is_pinned,
-            'is_popup': vo.is_popup
-        }
-        return post_pb2.PostOptions(**info)
 
 
 def PostInfo(post_vo: Post, minimal=False):
@@ -33,7 +23,7 @@ def PostInfo(post_vo: Post, minimal=False):
 
     if not minimal:
         info.update({
-            'options': PostOptionsInfo(post_vo.options),
+            'options': change_struct_type(post_vo.options),
             'domain_id': post_vo.domain_id,
             'user_id': post_vo.user_id,
             'created_at': utils.datetime_to_iso8601(post_vo.created_at),

@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from spaceone.core.service import *
@@ -58,6 +59,18 @@ class PostService(BaseService):
             if category not in categories:
                 raise ERROR_INVALID_CATEGORY(category=category, categories=categories)
 
+        _options = {'is_pinned': False, 'is_popup': False}
+
+        if options := params.get('options', {}):
+            self._valid_options(options)
+
+            if 'is_pinned' in options:
+                _options.update({'is_pinned': options['is_pinned']})
+            if 'is_popup' in options:
+                _options.update({'is_popup': options['is_popup']})
+
+        params['options'] = _options
+
         return self.post_mgr.create_board(params)
 
     @transaction(append_meta={
@@ -92,11 +105,13 @@ class PostService(BaseService):
             if category not in board_vo.categories:
                 raise ERROR_INVALID_CATEGORY(category=category, categories=board_vo.categories)
 
-        if options := params.get('options'):
-            if 'is_pinned' not in options.keys():
-                options.update({'is_pinned': post_vo.options.is_pinned})
-            if 'is_popup' not in options.keys():
-                options.update({'is_popup': post_vo.options.is_popup})
+        if options := params.get('options', {}):
+            self._valid_options(options)
+
+            _options = copy.deepcopy(post_vo.options)
+            _options.update(options)
+
+            params['options'] = _options
 
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
@@ -214,3 +229,11 @@ class PostService(BaseService):
 
         query = params.get('query', {})
         return self.post_mgr.stat_boards(query)
+
+    @staticmethod
+    def _valid_options(options):
+        exact_keys = ['is_pinned', 'is_popup']
+
+        for key in options:
+            if key not in exact_keys:
+                raise ERROR_INVALID_KEY_IN_OPTIONS

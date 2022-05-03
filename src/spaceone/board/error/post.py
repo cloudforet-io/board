@@ -7,3 +7,7 @@ class ERROR_SETTING_CATEGORIES(ERROR_BASE):
 
 class ERROR_INVALID_CATEGORY(ERROR_BASE):
     _message = 'Invalid category (category = {category}), you must choose one of {categories}'
+
+
+class ERROR_INVALID_KEY_IN_OPTIONS(ERROR_BASE):
+    _message = 'Invalid key in options'
