@@ -24,7 +24,7 @@ class Board(MongoModel):
             'name'
         ],
         'indexes': [
-            'board_id',
+            # 'board_id',
             'name',
             'categories'
         ]
