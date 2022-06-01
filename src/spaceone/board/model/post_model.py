@@ -38,7 +38,7 @@ class Post(MongoModel):
         ],
         'indexes': [
             'board_id',
-            'post_id',
+            # 'post_id',
             'category',
             'writer',
             'domain_id',
