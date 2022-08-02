@@ -58,6 +58,7 @@ class TestPostService(unittest.TestCase):
             },
             'writer': 'Kwon',
             'domain_id': self.domain_id,
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
         }
 
@@ -87,6 +88,7 @@ class TestPostService(unittest.TestCase):
                 'is_popup': True
             },
             'writer': 'Kwon',
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'domain_id': self.domain_id,
             'user_id': utils.generate_id('user')
         }
@@ -118,6 +120,7 @@ class TestPostService(unittest.TestCase):
                 'is_check': True
             },
             'writer': 'Kwon',
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'domain_id': self.domain_id,
             'user_id': utils.generate_id('user')
         }
@@ -138,6 +141,7 @@ class TestPostService(unittest.TestCase):
                 'is_popup': False
             },
             'writer': 'Kwon',
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'domain_id': self.domain_id,
             'user_id': utils.generate_id('user')
         }
@@ -161,6 +165,7 @@ class TestPostService(unittest.TestCase):
             },
             'writer': 'Kwon',
             'domain_id': self.domain_id,
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
         }
 
@@ -190,6 +195,7 @@ class TestPostService(unittest.TestCase):
             },
             'writer': 'Kwon',
             'domain_id': self.domain_id,
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
         }
 
@@ -212,6 +218,7 @@ class TestPostService(unittest.TestCase):
             },
             'writer': 'Kwon',
             'domain_id': self.domain_id,
+            'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
         }
 

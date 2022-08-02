@@ -46,6 +46,7 @@ class PostService(BaseService):
         board_id = params['board_id']
         params['user_id'] = self.transaction.get_meta('user_id')
         domain_id = params.get('domain_id')
+        params['user_domain_id'] = self.transaction.get_meta('domain_id')
 
         if domain_id:
             params['scope'] = 'DOMAIN'
@@ -184,7 +185,7 @@ class PostService(BaseService):
         'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
     })
     @check_required(['board_id'])
-    @append_query_filter(['post_id', 'category', 'writer', 'user_id', 'domain_id', 'user_domains'])
+    @append_query_filter(['post_id', 'category', 'writer', 'user_id', 'user_domain_id', 'domain_id', 'user_domains'])
     def list(self, params):
         """List posts
 
