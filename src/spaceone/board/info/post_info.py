@@ -26,6 +26,7 @@ def PostInfo(post_vo: Post, minimal=False):
             'options': change_struct_type(post_vo.options),
             'domain_id': post_vo.domain_id,
             'user_id': post_vo.user_id,
+            'user_domain_id': post_vo.user_domain_id,
             'created_at': utils.datetime_to_iso8601(post_vo.created_at),
             'updated_at': utils.datetime_to_iso8601(post_vo.updated_at)
         })
