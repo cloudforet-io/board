@@ -56,7 +56,7 @@ class PostService(BaseService):
         board_vo = self.board_mgr.get_board(board_id)
         categories = board_vo.categories
 
-        if category := params.get('category', None):
+        if category := params.get('category'):
             if category not in categories:
                 raise ERROR_INVALID_CATEGORY(category=category, categories=categories)
 

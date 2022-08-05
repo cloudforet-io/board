@@ -6,7 +6,7 @@ from spaceone.core.model.mongo_model import MongoModel
 class Post(MongoModel):
     board_id = StringField(max_length=40)
     post_id = StringField(max_length=40, generate_id='post', unique=True)
-    category = StringField(null=True)
+    category = StringField(null=True, default=None)
     title = StringField(max_length=255)
     contents = StringField()
     options = DictField(default={})
