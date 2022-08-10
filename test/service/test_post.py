@@ -75,6 +75,35 @@ class TestPostService(unittest.TestCase):
         self.assertEqual(self.transaction.get_meta('user_id'), post_vo.user_id)
         print(post_vo.options)
 
+    def test_create_post_none_category(self):
+        board_vo = BoardFactory()
+
+        params = {
+            'board_id': board_vo.board_id,
+            'title': 'test sample',
+            'contents': 'This is test sample of contents.',
+            'options': {
+                'is_pinned': True,
+                'is_popup': False
+            },
+            'writer': 'Kwon',
+            'domain_id': self.domain_id,
+            'user_domain_id': self.transaction.get_meta("domain_id"),
+            'user_id': utils.generate_id('user')
+        }
+
+        self.transaction.method = 'create'
+        post_svc = PostService(transaction=self.transaction)
+        post_vo = post_svc.create(params.copy())
+        print_data(post_vo.to_dict(), 'test_create_post')
+        PostInfo(post_vo)
+
+        self.assertIsInstance(post_vo, Post)
+        self.assertEqual(params['title'], post_vo.title)
+        self.assertEqual(params['board_id'], post_vo.board_id)
+        self.assertEqual(self.transaction.get_meta('user_id'), post_vo.user_id)
+        print(post_vo.options)
+
     def test_create_post_with_options_one_key(self):
         board_vo = BoardFactory()
 

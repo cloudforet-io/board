@@ -52,7 +52,7 @@ class BoardService(BaseService):
         return self.board_mgr.update_board(params)
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})
-    @check_required(['board_id', 'categories'])
+    @check_required(['board_id'])
     def set_categories(self, params):
         """Create board
 
@@ -65,6 +65,9 @@ class BoardService(BaseService):
                 Returns:
                     board_vo (object)
                 """
+
+        params['categories'] = params.get('categories', [])
+
         return self.board_mgr.update_board(params)
 
     @transaction(append_meta={'authorization.scope': 'SYSTEM'})

@@ -185,7 +185,7 @@ class PostService(BaseService):
         'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
     })
     @check_required(['board_id'])
-    @append_query_filter(['post_id', 'category', 'writer', 'user_id', 'user_domain_id', 'domain_id', 'user_domains'])
+    @append_query_filter(['board_id', 'post_id', 'category', 'writer', 'user_id', 'user_domain_id', 'domain_id', 'user_domains'])
     def list(self, params):
         """List posts
 
