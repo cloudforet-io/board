@@ -1,7 +1,7 @@
 import functools
 
 from spaceone.api.board.v1 import post_pb2
-from spaceone.core.pygrpc.message_type import change_struct_type
+from spaceone.core.pygrpc.message_type import change_struct_type, change_list_value_type
 from spaceone.core import utils
 
 from spaceone.board.model.post_model import Post
