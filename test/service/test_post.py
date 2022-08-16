@@ -9,6 +9,7 @@ from spaceone.core.unittest.result import print_data
 from spaceone.board.error import *
 from spaceone.board.info import PostInfo, PostsInfo, StatisticsInfo
 from spaceone.board.manager import BoardManager, PostManager
+from spaceone.board.manager.file_manager import FileManager
 from spaceone.board.model import Post
 from spaceone.board.service.post_service import PostService
 
@@ -44,8 +45,16 @@ class TestPostService(unittest.TestCase):
         post_vos = Post.objects.filter()
         post_vos.delete()
 
-    def test_create_post(self):
+    @patch.object(FileManager, 'get_file')
+    @patch.object(FileManager, 'update_file_reference')
+    @patch.object(FileManager, 'check_exist_file')
+    def test_create_post(self, mock_check_exist_file, mock_update_file_reference, mock_get_file, *args):
         board_vo = BoardFactory()
+
+        mock_get_file.return_value = {'file_id': utils.generate_id('file'), 'state': 'DONE',
+                                      'domain_id': self.domain_id}
+        mock_update_file_reference.return_value = None
+        mock_check_exist_file.return_value = mock_get_file
 
         params = {
             'board_id': board_vo.board_id,
@@ -57,6 +66,7 @@ class TestPostService(unittest.TestCase):
                 'is_popup': False
             },
             'writer': 'Kwon',
+            'files': [mock_get_file.return_value.get('file_id')],
             'domain_id': self.domain_id,
             'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
@@ -75,8 +85,16 @@ class TestPostService(unittest.TestCase):
         self.assertEqual(self.transaction.get_meta('user_id'), post_vo.user_id)
         print(post_vo.options)
 
-    def test_create_post_none_category(self):
+    @patch.object(FileManager, 'get_file')
+    @patch.object(FileManager, 'update_file_reference')
+    @patch.object(FileManager, 'check_exist_file')
+    def test_create_post_none_category(self, mock_check_exist_file, mock_update_file_reference, mock_get_file, *args):
         board_vo = BoardFactory()
+
+        mock_get_file.return_value = {'file_id': utils.generate_id('file'), 'state': 'DONE',
+                                      'domain_id': self.domain_id}
+        mock_update_file_reference.return_value = None
+        mock_check_exist_file.return_value = mock_get_file
 
         params = {
             'board_id': board_vo.board_id,
@@ -87,6 +105,7 @@ class TestPostService(unittest.TestCase):
                 'is_popup': False
             },
             'writer': 'Kwon',
+            'files': [mock_get_file.return_value.get('file_id')],
             'domain_id': self.domain_id,
             'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
@@ -104,8 +123,16 @@ class TestPostService(unittest.TestCase):
         self.assertEqual(self.transaction.get_meta('user_id'), post_vo.user_id)
         print(post_vo.options)
 
-    def test_create_post_with_options_one_key(self):
+    @patch.object(FileManager, 'get_file')
+    @patch.object(FileManager, 'update_file_reference')
+    @patch.object(FileManager, 'check_exist_file')
+    def test_create_post_with_options_one_key(self, mock_check_exist_file, mock_update_file_reference, mock_get_file,
+                                              *args):
         board_vo = BoardFactory()
+        mock_get_file.return_value = {'file_id': utils.generate_id('file'), 'state': 'DONE',
+                                      'domain_id': self.domain_id}
+        mock_update_file_reference.return_value = None
+        mock_check_exist_file.return_value = mock_get_file
 
         params = {
             'board_id': board_vo.board_id,
@@ -117,6 +144,7 @@ class TestPostService(unittest.TestCase):
                 'is_popup': True
             },
             'writer': 'Kwon',
+            'files': [mock_get_file.return_value.get('file_id')],
             'user_domain_id': self.transaction.get_meta("domain_id"),
             'domain_id': self.domain_id,
             'user_id': utils.generate_id('user')
@@ -180,8 +208,17 @@ class TestPostService(unittest.TestCase):
         with self.assertRaises(ERROR_NOT_FOUND):
             post_svc.create(params.copy())
 
-    def test_create_post_valid_categories(self):
+    @patch.object(FileManager, 'get_file')
+    @patch.object(FileManager, 'update_file_reference')
+    @patch.object(FileManager, 'check_exist_file')
+    def test_create_post_valid_categories(self, mock_check_exist_file, mock_update_file_reference, mock_get_file,
+                                          *args):
         board_vo = BoardFactory()
+
+        mock_get_file.return_value = {'file_id': utils.generate_id('file'), 'state': 'DONE',
+                                      'domain_id': self.domain_id}
+        mock_update_file_reference.return_value = None
+        mock_check_exist_file.return_value = mock_get_file
 
         params = {
             'board_id': board_vo.board_id,
@@ -193,6 +230,7 @@ class TestPostService(unittest.TestCase):
                 'is_popup': False
             },
             'writer': 'Kwon',
+            'files': [mock_get_file.return_value.get('file_id')],
             'domain_id': self.domain_id,
             'user_domain_id': self.transaction.get_meta("domain_id"),
             'user_id': utils.generate_id('user')
@@ -410,11 +448,11 @@ class TestPostService(unittest.TestCase):
 
     def test_delete_post(self):
         post_vo = PostFactory(domain_id=self.domain_id)
-
+        # print(post_vo.to_dict())
         params = {
             'board_id': post_vo.board_id,
             'post_id': post_vo.post_id,
-            'domain_id': self.domain_id
+            # 'domain_id': self.domain_id
         }
 
         self.transaction.method = 'delete'

@@ -4,7 +4,9 @@ import logging
 from spaceone.core.service import *
 from spaceone.board.error import *
 
-from spaceone.board.manager import PostManager, BoardManager
+from spaceone.board.manager import PostManager
+from spaceone.board.manager import BoardManager
+from spaceone.board.manager import FileManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +21,7 @@ class PostService(BaseService):
         super().__init__(*args, **kwargs)
         self.post_mgr: PostManager = self.locator.get_manager('PostManager')
         self.board_mgr: BoardManager = self.locator.get_manager('BoardManager')
+        self.file_mgr = None
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
@@ -36,6 +39,7 @@ class PostService(BaseService):
                         'contents': 'str',
                         'options': 'dict',
                         'writer': 'str',
+                        'files' : 'list',
                         'domain_id': 'str',
                         'user_id': 'str'(meta)
                     }
@@ -47,6 +51,7 @@ class PostService(BaseService):
         params['user_id'] = self.transaction.get_meta('user_id')
         domain_id = params.get('domain_id')
         params['user_domain_id'] = self.transaction.get_meta('domain_id')
+        file_ids = params.get('files', [])
 
         if domain_id:
             params['scope'] = 'DOMAIN'
@@ -72,7 +77,14 @@ class PostService(BaseService):
 
         params['options'] = _options
 
-        return self.post_mgr.create_board(params)
+        self.file_mgr: FileManager = self.locator.get_manager('FileManager')
+        self._check_files(file_ids, domain_id)
+
+        post_vo = self.post_mgr.create_board(params)
+
+        self._update_file_reference(post_vo.post_id, file_ids, domain_id)
+
+        return post_vo
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
@@ -91,6 +103,7 @@ class PostService(BaseService):
                         'contents': 'str',
                         'options': 'dict',
                         'writer': 'str',
+                        'files' : 'list',
                         'domain_id': 'str'
                     }
 
@@ -98,6 +111,7 @@ class PostService(BaseService):
                     post_vo (object)
         """
 
+        domain_id = params.get('domain_id')
         post_vo = self.post_mgr.get_post(params['board_id'], params['post_id'], params.get('domain_id'))
 
         if category := params.get('category'):
@@ -113,6 +127,24 @@ class PostService(BaseService):
             _options.update(options)
 
             params['options'] = _options
+
+        if 'files' in params:
+            self.file_mgr: FileManager = self.locator.get_manager('FileManager')
+
+            new_file_ids = set(params['files'])
+            old_file_ids = set(post_vo.files)
+
+            if new_file_ids != old_file_ids:
+                file_ids_to_be_deleted = list(old_file_ids - new_file_ids)
+                file_ids_to_be_created = list(new_file_ids - old_file_ids)
+
+                if len(file_ids_to_be_created) > 0:
+                    self._check_files(file_ids_to_be_created, domain_id)
+                    self._update_file_reference(post_vo.post_id, file_ids_to_be_created, domain_id)
+
+                if len(file_ids_to_be_deleted) > 0:
+                    for file_id in file_ids_to_be_deleted:
+                        self.file_mgr.delete_file(file_id, domain_id)
 
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
@@ -149,6 +181,12 @@ class PostService(BaseService):
 
         post_vo = self.post_mgr.get_post(board_id, post_id, domain_id)
 
+        if len(post_vo.files) > 0:
+            self.file_mgr: FileManager = self.locator.get_manager('FileManager')
+
+            for file_id in post_vo.files:
+                self.file_mgr.delete_file(file_id, domain_id)
+
         self.post_mgr.delete_post_vo(post_vo)
 
     @transaction(append_meta={
@@ -176,16 +214,22 @@ class PostService(BaseService):
         domain_id = params.get('domain_id')
 
         post_vo = self.post_mgr.get_post(board_id, post_id, domain_id, params.get('only'))
+
         self.post_mgr.increase_view_count(post_vo)
 
-        return post_vo
+        files_info = []
+        if len(post_vo.files) > 0:
+            files_info = self._get_files_info_from_file_manager(post_vo.files, domain_id)
+
+        return post_vo, files_info
 
     @transaction(append_meta={
         'authorization.scope': 'DOMAIN',
         'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
     })
     @check_required(['board_id'])
-    @append_query_filter(['board_id', 'post_id', 'category', 'writer', 'user_id', 'user_domain_id', 'domain_id', 'user_domains'])
+    @append_query_filter(
+        ['board_id', 'post_id', 'category', 'writer', 'user_id', 'user_domain_id', 'domain_id', 'user_domains'])
     def list(self, params):
         """List posts
 
@@ -230,6 +274,29 @@ class PostService(BaseService):
 
         query = params.get('query', {})
         return self.post_mgr.stat_boards(query)
+
+    def _check_files(self, file_ids, domain_id):
+        for file_id in file_ids:
+            self._verify_file(file_id, domain_id)
+
+    def _update_file_reference(self, post_id, files, domain_id):
+        for file in files:
+            reference = {'resource_id': post_id, 'resource_type': 'board.Post'}
+            self.file_mgr.update_file_reference(file.get('file_id'), reference, domain_id)
+
+    def _verify_file(self, file_id, domain_id):
+        file_info = self.file_mgr.get_file(file_id, domain_id)
+
+        file_state = file_info.get('state')
+        if file_state != 'DONE':
+            raise ERROR_INVALID_FILE_STATE(file_id=file_id, state=file_state)
+
+    def _get_files_info_from_file_manager(self, file_ids, domain_id):
+        files_info = []
+        for file_id in file_ids:
+            file_info = self.file_mgr.get_file(file_id, domain_id)
+            files_info.append(file_info)
+        return files_info
 
     @staticmethod
     def _valid_options(options):

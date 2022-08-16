@@ -42,6 +42,13 @@ HANDLERS = {
 
 # Connector Settings
 CONNECTORS = {
+    'SpaceConnector': {
+        'backend': 'spaceone.core.connector.space_connector.SpaceConnector',
+        'endpoints': {
+            'identity': 'grpc://identity:50051',
+            'file_manager': 'grpc://file_manager:50051',
+        }
+    }
 }
 
 # Log Settings

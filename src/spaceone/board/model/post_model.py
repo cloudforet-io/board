@@ -12,6 +12,7 @@ class Post(MongoModel):
     options = DictField(default={})
     view_count = IntField(default=0)
     writer = StringField()
+    files = ListField(StringField, default=[])
     scope = StringField(max_length=20, choices=('SYSTEM', 'DOMAIN'))
     domain_id = StringField(max_length=40, default=None, null=True)
     user_id = StringField(max_length=40)
@@ -26,6 +27,7 @@ class Post(MongoModel):
             'contents',
             'options',
             'writer',
+            'files'
         ],
         'minimal_fields': [
             'board_id',
@@ -39,7 +41,6 @@ class Post(MongoModel):
         ],
         'indexes': [
             'board_id',
-            # 'post_id',
             'category',
             'writer',
             'domain_id',

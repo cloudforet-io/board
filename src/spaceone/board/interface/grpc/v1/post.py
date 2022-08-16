@@ -30,7 +30,8 @@ class Post(BaseAPI, post_pb2_grpc.PostServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('PostService', metadata) as post_service:
-            return self.locator.get_info('PostInfo', post_service.get(params))
+            post_vo, files_info = post_service.get(params)
+            return self.locator.get_info('PostInfo', post_vo, files_info=files_info)
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)

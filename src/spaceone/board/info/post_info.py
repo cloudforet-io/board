@@ -9,7 +9,7 @@ from spaceone.board.model.post_model import Post
 __all__ = ['PostInfo', 'PostsInfo']
 
 
-def PostInfo(post_vo: Post, minimal=False):
+def PostInfo(post_vo: Post, minimal=False, files_info=None):
     info = {
         'board_id': post_vo.board_id,
         'post_id': post_vo.post_id,
@@ -30,6 +30,11 @@ def PostInfo(post_vo: Post, minimal=False):
             'created_at': utils.datetime_to_iso8601(post_vo.created_at),
             'updated_at': utils.datetime_to_iso8601(post_vo.updated_at)
         })
+
+        if files_info:
+            info['files'] = files_info
+        else:
+            info['files'] = post_vo.files
 
     return post_pb2.PostInfo(**info)
 
