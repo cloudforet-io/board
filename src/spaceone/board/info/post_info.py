@@ -32,9 +32,9 @@ def PostInfo(post_vo: Post, minimal=False, files_info=None):
         })
 
         if files_info:
-            info['files'] = files_info
+            info['files'] = change_list_value_type(files_info)
         else:
-            info['files'] = post_vo.files
+            info['files'] = change_list_value_type(post_vo.files)
 
     return post_pb2.PostInfo(**info)
 
