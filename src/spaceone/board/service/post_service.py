@@ -79,7 +79,9 @@ class PostService(BaseService):
 
         self.file_mgr: FileManager = self.locator.get_manager('FileManager')
         self._check_files(file_ids, domain_id)
-
+        print("------ PARAMS -----------")
+        print(params)
+        print("-----------------")
         post_vo = self.post_mgr.create_board(params)
 
         self._update_file_reference(post_vo.post_id, file_ids, domain_id)
