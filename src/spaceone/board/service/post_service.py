@@ -79,9 +79,6 @@ class PostService(BaseService):
 
         self.file_mgr: FileManager = self.locator.get_manager('FileManager')
         self._check_files(file_ids, domain_id)
-        print("------ PARAMS -----------")
-        print(params)
-        print("-----------------")
         post_vo = self.post_mgr.create_board(params)
 
         self._update_file_reference(post_vo.post_id, file_ids, domain_id)
@@ -218,6 +215,7 @@ class PostService(BaseService):
         post_vo = self.post_mgr.get_post(board_id, post_id, domain_id, params.get('only'))
 
         self.post_mgr.increase_view_count(post_vo)
+        self.file_mgr: FileManager = self.locator.get_manager('FileManager')
 
         files_info = []
         if len(post_vo.files) > 0:
@@ -284,7 +282,7 @@ class PostService(BaseService):
     def _update_file_reference(self, post_id, files, domain_id):
         for file in files:
             reference = {'resource_id': post_id, 'resource_type': 'board.Post'}
-            self.file_mgr.update_file_reference(file.get('file_id'), reference, domain_id)
+            self.file_mgr.update_file_reference(file, reference, domain_id)
 
     def _verify_file(self, file_id, domain_id):
         file_info = self.file_mgr.get_file(file_id, domain_id)

@@ -12,7 +12,7 @@ class Post(MongoModel):
     options = DictField(default={})
     view_count = IntField(default=0)
     writer = StringField()
-    files = ListField(StringField, default=[])
+    files = ListField(StringField(), default=[])
     scope = StringField(max_length=20, choices=('SYSTEM', 'DOMAIN'))
     domain_id = StringField(max_length=40, default=None, null=True)
     user_id = StringField(max_length=40)
