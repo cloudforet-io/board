@@ -294,7 +294,7 @@ class PostService(BaseService):
     def _get_files_info_from_file_manager(self, file_ids, domain_id):
         files_info = []
         for file_id in file_ids:
-            file_info = self.file_mgr.get_file(file_id, domain_id)
+            file_info = self.file_mgr.get_download_url(file_id, domain_id)
             files_info.append(file_info)
         return files_info
 
