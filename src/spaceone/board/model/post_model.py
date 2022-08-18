@@ -32,6 +32,10 @@ class Post(MongoModel):
         'minimal_fields': [
             'board_id',
             'post_id',
+            'category',
+            'title',
+            'scope',
+            'domain_id'
         ],
         'change_query_keys': {
             'user_domains': 'domain_id'

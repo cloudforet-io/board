@@ -18,7 +18,8 @@ class Board(MongoModel):
         ],
         'minimal_fields': [
             'board_id',
-            'name'
+            'name',
+            'categories'
         ],
         'ordering': [
             'name'

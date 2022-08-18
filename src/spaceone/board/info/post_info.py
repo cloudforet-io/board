@@ -15,16 +15,16 @@ def PostInfo(post_vo: Post, minimal=False, files_info=None):
         'post_id': post_vo.post_id,
         'category': post_vo.category,
         'title': post_vo.title,
-        'contents': post_vo.contents,
-        'view_count': post_vo.view_count,
-        'writer': post_vo.writer,
-        'scope': post_vo.scope
+        'scope': post_vo.scope,
+        'domain_id': post_vo.domain_id,
     }
 
     if not minimal:
         info.update({
+            'contents': post_vo.contents,
+            'view_count': post_vo.view_count,
+            'writer': post_vo.writer,
             'options': change_struct_type(post_vo.options),
-            'domain_id': post_vo.domain_id,
             'user_id': post_vo.user_id,
             'user_domain_id': post_vo.user_domain_id,
             'created_at': utils.datetime_to_iso8601(post_vo.created_at),
