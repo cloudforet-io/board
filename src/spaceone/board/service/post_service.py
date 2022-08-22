@@ -4,9 +4,10 @@ import logging
 from spaceone.core.service import *
 from spaceone.board.error import *
 
-from spaceone.board.manager import PostManager
-from spaceone.board.manager import BoardManager
-from spaceone.board.manager import FileManager
+from spaceone.board.manager.post_manager import PostManager
+from spaceone.board.manager.board_manager import BoardManager
+from spaceone.board.manager.file_manager import FileManager
+from spaceone.board.manager.identity_manager import IdentityManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class PostService(BaseService):
         self.file_mgr = None
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
+        'authorization.scope': 'PUBLIC_OR_DOMAIN',
         'authorization.require_domain_id': True
     })
     @check_required(['board_id', 'title', 'contents'])
@@ -48,15 +49,24 @@ class PostService(BaseService):
                     post_vo (object)
         """
         board_id = params['board_id']
-        params['user_id'] = self.transaction.get_meta('user_id')
         domain_id = params.get('domain_id')
+        params['user_id'] = self.transaction.get_meta('user_id')
         params['user_domain_id'] = self.transaction.get_meta('domain_id')
+        params['post_type'] = 'SYSTEM'
+
         file_ids = params.get('files', [])
 
         if domain_id:
+            # If the post is not written in the root domain, set it to INTERNAL post_type
+            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+            user_domain_info = identity_mgr.get_domain(params['user_domain_id'])
+
+            if user_domain_info['name'] != 'root':
+                params['post_type'] = 'INTERNAL'
+
             params['scope'] = 'DOMAIN'
         else:
-            params['scope'] = 'SYSTEM'
+            params['scope'] = 'PUBLIC'
 
         board_vo = self.board_mgr.get_board(board_id)
         categories = board_vo.categories
@@ -86,7 +96,7 @@ class PostService(BaseService):
         return post_vo
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
+        'authorization.scope': 'PUBLIC_OR_DOMAIN',
         'authorization.require_domain_id': True
     })
     @check_required(['board_id', 'post_id'])
@@ -148,7 +158,7 @@ class PostService(BaseService):
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
+        'authorization.scope': 'PUBLIC_OR_DOMAIN',
         'authorization.require_domain_id': True
     })
     @check_required(['board_id', 'post_id'])
@@ -156,7 +166,7 @@ class PostService(BaseService):
         pass
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
+        'authorization.scope': 'PUBLIC_OR_DOMAIN',
         'authorization.require_domain_id': True
     })
     @check_required(['board_id', 'post_id'])
@@ -189,8 +199,7 @@ class PostService(BaseService):
         self.post_mgr.delete_post_vo(post_vo)
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
-        'authorization.require_domain_id': True
+        'authorization.scope': 'PUBLIC_OR_DOMAIN'
     })
     @check_required(['board_id', 'post_id'])
     def get(self, params):
@@ -213,8 +222,8 @@ class PostService(BaseService):
         domain_id = params.get('domain_id')
 
         post_vo = self.post_mgr.get_post(board_id, post_id, domain_id, params.get('only'))
-
         self.post_mgr.increase_view_count(post_vo)
+
         self.file_mgr: FileManager = self.locator.get_manager('FileManager')
 
         files_info = []
@@ -224,12 +233,11 @@ class PostService(BaseService):
         return post_vo, files_info
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
-        'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
+        'authorization.scope': 'PUBLIC_OR_DOMAIN'
     })
     @check_required(['board_id'])
-    @append_query_filter(
-        ['board_id', 'post_id', 'category', 'writer', 'user_id', 'user_domain_id', 'domain_id', 'user_domains'])
+    @append_query_filter(['board_id', 'post_id', 'post_type', 'category', 'writer', 'scope', 'user_id',
+                          'user_domain_id', 'domain_id', 'user_domains'])
     def list(self, params):
         """List posts
 
@@ -237,7 +245,9 @@ class PostService(BaseService):
                     params (dict): {
                         'board_id': 'str',
                         'post_id': 'str',
+                        'post_type': 'str',
                         'category': 'str',
+                        'scope': 'str',
                         'writer': 'str',
                         'user_id': 'str',
                         'domain_id': 'str',
@@ -254,8 +264,7 @@ class PostService(BaseService):
         return self.post_mgr.list_boards(query)
 
     @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
-        'mutation.append_parameter': {'user_domains': {'meta': 'domain_id', 'data': [None]}},
+        'authorization.scope': 'PUBLIC_OR_DOMAIN'
     })
     @check_required(['query'])
     @append_query_filter(['user_domains'])
