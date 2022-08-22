@@ -41,7 +41,7 @@ class PostManager(BaseManager):
         if domain_id:
             scope = 'DOMAIN'
         else:
-            scope = 'SYSTEM'
+            scope = 'PUBLIC'
 
         return self.post_model.get(board_id=board_id, post_id=post_id, domain_id=domain_id, scope=scope, only=only)
 

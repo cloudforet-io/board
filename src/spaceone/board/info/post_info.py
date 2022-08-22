@@ -13,6 +13,7 @@ def PostInfo(post_vo: Post, minimal=False, files_info=None):
     info = {
         'board_id': post_vo.board_id,
         'post_id': post_vo.post_id,
+        'post_type': post_vo.post_type,
         'category': post_vo.category,
         'title': post_vo.title,
         'scope': post_vo.scope,

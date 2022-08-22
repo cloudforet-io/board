@@ -4,7 +4,6 @@ from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 
-from spaceone.board.error import ERROR_NOT_FOUND_FILE
 
 _LOGGER = logging.getLogger(__name__)
 
