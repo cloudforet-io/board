@@ -121,7 +121,7 @@ class PostService(BaseService):
         """
 
         domain_id = params.get('domain_id')
-        post_vo = self.post_mgr.get_post(params['board_id'], params['post_id'], params.get('domain_id'))
+        post_vo = self.post_mgr.get_post(params['board_id'], params['post_id'])
 
         if category := params.get('category'):
             board_vo = self.board_mgr.get_board(params['board_id'])
@@ -188,7 +188,7 @@ class PostService(BaseService):
         post_id = params['post_id']
         domain_id = params.get('domain_id')
 
-        post_vo = self.post_mgr.get_post(board_id, post_id, domain_id)
+        post_vo = self.post_mgr.get_post(board_id, post_id)
 
         if len(post_vo.files) > 0:
             self.file_mgr: FileManager = self.locator.get_manager('FileManager')
@@ -221,7 +221,7 @@ class PostService(BaseService):
         post_id = params['post_id']
         domain_id = params.get('domain_id')
 
-        post_vo = self.post_mgr.get_post(board_id, post_id, domain_id, params.get('only'))
+        post_vo = self.post_mgr.get_post(board_id, post_id, params.get('only'))
         self.post_mgr.increase_view_count(post_vo)
 
         self.file_mgr: FileManager = self.locator.get_manager('FileManager')

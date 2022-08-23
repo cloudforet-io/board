@@ -24,7 +24,7 @@ class PostManager(BaseManager):
         return post_vo
 
     def update_post(self, params):
-        post_vo: Post = self.get_post(params['board_id'], params['post_id'], params['domain_id'])
+        post_vo: Post = self.get_post(params['board_id'], params['post_id'])
         return self.update_post_by_vo(params, post_vo)
 
     def update_post_by_vo(self, params, post_vo):
@@ -37,13 +37,8 @@ class PostManager(BaseManager):
 
         return post_vo.update(params)
 
-    def get_post(self, board_id, post_id, domain_id=None, only=None):
-        if domain_id:
-            scope = 'DOMAIN'
-        else:
-            scope = 'PUBLIC'
-
-        return self.post_model.get(board_id=board_id, post_id=post_id, domain_id=domain_id, scope=scope, only=only)
+    def get_post(self, board_id, post_id, only=None):
+        return self.post_model.get(board_id=board_id, post_id=post_id, only=only)
 
     def list_boards(self, query={}):
         return self.post_model.query(**query)
