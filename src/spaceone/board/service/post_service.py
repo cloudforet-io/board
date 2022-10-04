@@ -7,7 +7,6 @@ from spaceone.board.error import *
 from spaceone.board.manager.post_manager import PostManager
 from spaceone.board.manager.board_manager import BoardManager
 from spaceone.board.manager.file_manager import FileManager
-from spaceone.board.manager.identity_manager import IdentityManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,15 +52,12 @@ class PostService(BaseService):
         params['user_id'] = self.transaction.get_meta('user_id')
         params['user_domain_id'] = self.transaction.get_meta('domain_id')
         params['post_type'] = 'SYSTEM'
+        role_type = self.transaction.get_meta('authorization.role_type')
 
         file_ids = params.get('files', [])
 
         if domain_id:
-            # If the post is not written in the root domain, set it to INTERNAL post_type
-            identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
-            user_domain_info = identity_mgr.get_domain(params['user_domain_id'])
-
-            if user_domain_info['name'] != 'root':
+            if role_type != 'SYSTEM':
                 params['post_type'] = 'INTERNAL'
 
             params['scope'] = 'DOMAIN'
