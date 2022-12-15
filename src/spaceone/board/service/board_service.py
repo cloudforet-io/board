@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import cache
 from spaceone.core.service import *
 from spaceone.board.manager.board_manager import BoardManager
 
@@ -121,6 +122,8 @@ class BoardService(BaseService):
                 """
 
         query = params.get('query', {})
+        self._create_default_board()
+
         return self.board_mgr.list_boards(query)
 
     @transaction(append_meta={'authorization.scope': 'PUBLIC'})
@@ -139,3 +142,11 @@ class BoardService(BaseService):
 
         query = params.get('query', {})
         return self.board_mgr.stat_boards(query)
+
+    @cache.cacheable(key='board:default:init', expire=300)
+    def _create_default_board(self):
+        board_vos, total_count = self.board_mgr.list_boards()
+        installed_boards = [board_vo.name for board_vo in board_vos]
+        self.board_mgr.create_default_boards(installed_boards)
+
+        return True
