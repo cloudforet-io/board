@@ -2,6 +2,7 @@ import logging
 from spaceone.core.manager import BaseManager
 
 from spaceone.board.model.board_model import Board
+from spaceone.board.conf.board_conf import DEFAULT_BOARDS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,3 +50,9 @@ class BoardManager(BaseManager):
 
     def stat_boards(self, query):
         return self.board_model.stat(**query)
+
+    def create_default_boards(self, installed_boards):
+        for board in DEFAULT_BOARDS:
+            if board['name'] not in installed_boards:
+                _LOGGER.debug(f'Create default board: {board["name"]}')
+                self.create_board(board)
