@@ -146,7 +146,7 @@ class BoardService(BaseService):
     @cache.cacheable(key='board:default:init', expire=300)
     def _create_default_board(self):
         board_vos, total_count = self.board_mgr.list_boards()
-        installed_boards = [board_vo.board_id for board_vo in board_vos]
+        installed_boards = [board_vo.name for board_vo in board_vos]
         self.board_mgr.create_default_boards(installed_boards)
 
         return True

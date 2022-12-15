@@ -53,6 +53,6 @@ class BoardManager(BaseManager):
 
     def create_default_boards(self, installed_boards):
         for board in DEFAULT_BOARDS:
-            if board['board_id'] not in installed_boards:
+            if board['name'] not in installed_boards:
                 _LOGGER.debug(f'Create default board: {board["name"]}')
                 self.create_board(board)

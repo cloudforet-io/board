@@ -1,1 +1,5 @@
-DEFAULT_BOARDS = [{}]
+DEFAULT_BOARDS = [
+    {
+        'name': 'Notice'
+    }
+]
