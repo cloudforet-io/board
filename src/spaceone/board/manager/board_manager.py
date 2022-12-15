@@ -52,7 +52,7 @@ class BoardManager(BaseManager):
         return self.board_model.stat(**query)
 
     def create_default_boards(self, installed_boards):
-        for board in DEFAULT_BOARDS:
-            if board['name'] not in installed_boards:
-                _LOGGER.debug(f'Create default board: {board["name"]}')
-                self.create_board(board)
+        for board_info in DEFAULT_BOARDS:
+            if board_info['name'] not in installed_boards:
+                _LOGGER.debug(f'Create default board: {board_info["name"]}')
+                self.create_board(board_info)
