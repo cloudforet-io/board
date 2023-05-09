@@ -13,15 +13,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
 from setuptools import setup, find_packages
-
-with open('VERSION', 'r') as f:
-    VERSION = f.read().strip()
-    f.close()
 
 setup(
     name='spaceone-board',
-    version=VERSION,
+    version=os.environ.get('PACKAGE_VERSION'),
     description='SpaceONE board service',
     long_description='',
     url='https://www.spaceone.dev/',
