@@ -12,19 +12,15 @@ from test.factory.board_factory import BoardFactory
 
 
 class TestBoardService(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
-        config.init_conf(package='spaceone.board')
+        config.init_conf(package="spaceone.board")
         config.set_service_config()
         config.set_global(MOCK_MODE=True)
-        connect('test', host='mongomock://localhost')
+        connect("test", host="mongomock://localhost")
 
-        cls.domain_id = utils.generate_id('domain')
-        cls.transaction = Transaction({
-            'service': 'board',
-            'api_class': 'Board'
-        })
+        cls.domain_id = utils.generate_id("domain")
+        cls.transaction = Transaction({"service": "board", "api_class": "Board"})
         super().setUpClass()
 
     @classmethod
@@ -34,52 +30,46 @@ class TestBoardService(unittest.TestCase):
 
     def tearDown(self, *args) -> None:
         print()
-        print('(tearDown) ==> Delete all data_sources')
+        print("(tearDown) ==> Delete all data_sources")
         board_vos = Board.objects.filter()
         board_vos.delete()
 
     def test_create_board_required_param(self):
-        params = {
-            'name': 'Notice'
-        }
+        params = {"name": "Notice"}
 
-        self.transaction.method = 'create'
+        self.transaction.method = "create"
         board_svc = BoardService(transaction=self.transaction)
         board_vo = board_svc.create(params.copy())
 
-        print_data(board_vo.to_dict(), 'test_create_board')
+        print_data(board_vo.to_dict(), "test_create_board")
         BoardInfo(board_vo)
 
         self.assertIsInstance(board_vo, Board)
-        self.assertEqual(params['name'], board_vo.name)
+        self.assertEqual(params["name"], board_vo.name)
 
     def test_create_board_params(self):
         params = {
-            'name': 'Notice',
-            'categories': ['a', 'b', 'c'],
-            'tags': {
-                'test': 'a'
-            }
+            "name": "Notice",
+            "categories": ["a", "b", "c"],
+            "tags": {"test": "a"},
         }
 
-        self.transaction.method = 'create'
+        self.transaction.method = "create"
         board_svc = BoardService(transaction=self.transaction)
         board_vo = board_svc.create(params.copy())
 
-        print_data(board_vo.to_dict(), 'test_create_board_params_all')
+        print_data(board_vo.to_dict(), "test_create_board_params_all")
         BoardInfo(board_vo)
 
         self.assertIsInstance(board_vo, Board)
-        self.assertEqual(params['name'], board_vo.name)
-        self.assertEqual(params['categories'], board_vo.categories)
-        self.assertEqual(params['tags'], board_vo.tags)
+        self.assertEqual(params["name"], board_vo.name)
+        self.assertEqual(params["categories"], board_vo.categories)
+        self.assertEqual(params["tags"], board_vo.tags)
 
     def test_create_invalid_params(self):
-        params = {
-            'categories': ['a', 'b', 'c']
-        }
+        params = {"categories": ["a", "b", "c"]}
 
-        self.transaction.method = 'create'
+        self.transaction.method = "create"
         board_svc = BoardService(transaction=self.transaction)
         with self.assertRaises(Exception):
             board_svc.create(params.copy())
@@ -87,51 +77,44 @@ class TestBoardService(unittest.TestCase):
     def test_update_board(self):
         board_vo = BoardFactory()
 
-        params = {
-            'board_id': board_vo.board_id,
-            'name': 'new',
-            'tags': {'a': 'b'}
-        }
+        params = {"board_id": board_vo.board_id, "name": "new", "tags": {"a": "b"}}
 
-        self.transaction.method = 'update'
+        self.transaction.method = "update"
         board_svc = BoardService(transaction=self.transaction)
         update_board_vo = board_svc.update(params.copy())
 
-        print_data(update_board_vo.to_dict(), 'test_update_board')
+        print_data(update_board_vo.to_dict(), "test_update_board")
         BoardInfo(update_board_vo)
 
         self.assertIsInstance(update_board_vo, Board)
-        self.assertEqual(params['board_id'], update_board_vo.board_id)
-        self.assertEqual(params['name'], update_board_vo.name)
-        self.assertEqual(params['tags'], update_board_vo.tags)
+        self.assertEqual(params["board_id"], update_board_vo.board_id)
+        self.assertEqual(params["name"], update_board_vo.name)
+        self.assertEqual(params["tags"], update_board_vo.tags)
 
     def test_set_categories(self):
         board_vo = BoardFactory()
 
-        params = {
-            'board_id': board_vo.board_id,
-            'categories': ['d', 'e', 'f']
-        }
+        params = {"board_id": board_vo.board_id, "categories": ["d", "e", "f"]}
 
-        self.transaction.method = 'set_categories'
+        self.transaction.method = "set_categories"
         board_svc = BoardService(transaction=self.transaction)
         changed_categories_board_vo = board_svc.set_categories(params.copy())
 
-        print_data(changed_categories_board_vo.to_dict(), 'test_changed_categories_board_vo')
+        print_data(
+            changed_categories_board_vo.to_dict(), "test_changed_categories_board_vo"
+        )
         BoardInfo(changed_categories_board_vo)
 
         self.assertIsInstance(changed_categories_board_vo, Board)
-        self.assertEqual(params['board_id'], changed_categories_board_vo.board_id)
-        self.assertEqual(params['categories'], changed_categories_board_vo.categories)
+        self.assertEqual(params["board_id"], changed_categories_board_vo.board_id)
+        self.assertEqual(params["categories"], changed_categories_board_vo.categories)
 
     def test_delete_board(self):
         board_vo = BoardFactory()
 
-        params = {
-            'board_id': board_vo.board_id
-        }
+        params = {"board_id": board_vo.board_id}
 
-        self.transaction.method = 'delete'
+        self.transaction.method = "delete"
         board_svc = BoardService(transaction=self.transaction)
         result = board_svc.delete(params)
 
@@ -140,15 +123,13 @@ class TestBoardService(unittest.TestCase):
     def test_get_board(self):
         board_vo = BoardFactory()
 
-        params = {
-            'board_id': board_vo.board_id
-        }
+        params = {"board_id": board_vo.board_id}
 
-        self.transaction.method = 'get'
+        self.transaction.method = "get"
         board_svc = BoardService(transaction=self.transaction)
         get_board_vo = board_svc.get(params)
 
-        print_data(get_board_vo.to_dict(), 'test_get_board')
+        print_data(get_board_vo.to_dict(), "test_get_board")
         BoardInfo(get_board_vo)
 
         self.assertIsInstance(get_board_vo, Board)
@@ -159,17 +140,15 @@ class TestBoardService(unittest.TestCase):
 
         print_data(board_vos[4].to_dict(), "5th board_vo")
 
-        params = {
-            'board_id': board_vos[4].board_id
-        }
+        params = {"board_id": board_vos[4].board_id}
 
-        self.transaction.method = 'list'
+        self.transaction.method = "list"
         board_svc = BoardService(transaction=self.transaction)
         board_svc_vos, total_count = board_svc.list(params)
         BoardsInfo(board_svc_vos, total_count)
 
         self.assertEqual(len(board_svc_vos), 1)
-        self.assertEqual(board_svc_vos[0].board_id, params.get('board_id'))
+        self.assertEqual(board_svc_vos[0].board_id, params.get("board_id"))
         self.assertIsInstance(board_svc_vos[0], Board)
         self.assertEqual(total_count, 1)
 
@@ -182,23 +161,15 @@ class TestBoardService(unittest.TestCase):
         for board_vo in check_sample_board_vos:
             check_sample_board_ids.append(board_vo.board_id)
 
-        params = {
-            'query': {
-                'distinct': 'board_id',
-                'page': {
-                    'start': 0,
-                    'limit': 3
-                }
-            }
-        }
+        params = {"query": {"distinct": "board_id", "page": {"start": 0, "limit": 3}}}
 
-        self.transaction.method = 'stat'
+        self.transaction.method = "stat"
         board_svc = BoardService(transaction=self.transaction)
         values = board_svc.stat(params)
         StatisticsInfo(values)
 
-        print_data(values, 'test_stat_board')
+        print_data(values, "test_stat_board")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

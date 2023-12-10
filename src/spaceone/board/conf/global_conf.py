@@ -1,17 +1,17 @@
 # Database Settings
 DATABASES = {
-    'default': {
-        'db': 'board',
-        'host': 'localhost',
-        'port': 27017,
-        'username': '',
-        'password': ''
+    "default": {
+        "db": "board",
+        "host": "localhost",
+        "port": 27017,
+        "username": "",
+        "password": "",
     }
 }
 
 # Cache Settings
 CACHES = {
-    'default': {
+    "default": {
         # Redis Example
         # 'backend': 'spaceone.core.cache.redis_cache.RedisCache',
         # 'host': '<host>',
@@ -22,35 +22,34 @@ CACHES = {
 
 # Handler Configuration
 HANDLERS = {
-    'authentication': [
+    "authentication": [
         # Default Authentication Handler
         # {
         #     'backend': 'spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler',
         #     'uri': 'grpc://identity:50051/v1/Domain/get_public_key'
         # }
     ],
-    'authorization': [
+    "authorization": [
         # Default Authorization Handler
         # {
         #     'backend': 'spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler',
         #     'uri': 'grpc://identity:50051/v1/Authorization/verify'
         # }
     ],
-    'mutation': [],
-    'event': []
+    "mutation": [],
+    "event": [],
 }
 
 # Connector Settings
 CONNECTORS = {
-    'SpaceConnector': {
-        'backend': 'spaceone.core.connector.space_connector.SpaceConnector',
-        'endpoints': {
-            'identity': 'grpc://identity:50051',
-            'file_manager': 'grpc://file-manager:50051',
-        }
+    "SpaceConnector": {
+        "backend": "spaceone.core.connector.space_connector.SpaceConnector",
+        "endpoints": {
+            "identity": "grpc://identity:50051",
+            "file_manager": "grpc://file-manager:50051",
+        },
     }
 }
 
 # Log Settings
-LOG = {
-}
+LOG = {}

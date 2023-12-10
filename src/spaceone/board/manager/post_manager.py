@@ -7,15 +7,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class PostManager(BaseManager):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.post_model: Post = self.locator.get_model('Post')
+        self.post_model: Post = self.locator.get_model("Post")
 
     def create_board(self, params):
         def _rollback(post_vo):
-            _LOGGER.info(f'[create_post._rollback] '
-                         f'Delete post : {post_vo.name}')
+            _LOGGER.info(f"[create_post._rollback] " f"Delete post : {post_vo.name}")
             post_vo.delete()
 
         post_vo: Post = self.post_model.create(params)
@@ -24,13 +22,14 @@ class PostManager(BaseManager):
         return post_vo
 
     def update_post(self, params):
-        post_vo: Post = self.get_post(params['board_id'], params['post_id'])
+        post_vo: Post = self.get_post(params["board_id"], params["post_id"])
         return self.update_post_by_vo(params, post_vo)
 
     def update_post_by_vo(self, params, post_vo):
         def _rollback(old_data):
-            _LOGGER.info(f'[update_post_by_vo._rollback] Revert Data : '
-                         f'{old_data["post_id"]}')
+            _LOGGER.info(
+                f"[update_post_by_vo._rollback] Revert Data : " f'{old_data["post_id"]}'
+            )
             post_vo.update(old_data)
 
         self.transaction.add_rollback(_rollback, post_vo.to_dict())

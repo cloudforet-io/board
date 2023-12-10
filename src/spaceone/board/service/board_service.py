@@ -18,10 +18,10 @@ class BoardService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.board_mgr: BoardManager = self.locator.get_manager('BoardManager')
+        self.board_mgr: BoardManager = self.locator.get_manager("BoardManager")
 
     @transaction(scope="admin:write")
-    @check_required(['name'])
+    @check_required(["name"])
     def create(self, params):
         """Create board
 
@@ -39,114 +39,114 @@ class BoardService(BaseService):
         return self.board_mgr.create_board(params)
 
     @transaction(scope="admin:write")
-    @check_required(['board_id'])
+    @check_required(["board_id"])
     def update(self, params):
         """Update board
 
-                Args:
-                    params (dict): {
-                        'board_id': 'str,
-                        'name': 'str,
-                        'tags': 'dict'
-                    }
+        Args:
+            params (dict): {
+                'board_id': 'str,
+                'name': 'str,
+                'tags': 'dict'
+            }
 
-                Returns:
-                    board_vo (object)
-                """
+        Returns:
+            board_vo (object)
+        """
         return self.board_mgr.update_board(params)
 
     @transaction(scope="admin:write")
-    @check_required(['board_id'])
+    @check_required(["board_id"])
     def set_categories(self, params):
         """Create board
 
-                Args:
-                    params (dict): {
-                        'board_id': 'str',
-                        'categories': 'list'
-                    }
+        Args:
+            params (dict): {
+                'board_id': 'str',
+                'categories': 'list'
+            }
 
-                Returns:
-                    board_vo (object)
-                """
+        Returns:
+            board_vo (object)
+        """
 
-        params['categories'] = params.get('categories', [])
+        params["categories"] = params.get("categories", [])
 
         return self.board_mgr.update_board(params)
 
     @transaction(scope="admin:write")
-    @check_required(['board_id'])
+    @check_required(["board_id"])
     def delete(self, params):
         """Delete board
 
-                Args:
-                    params (dict): {
-                        'webhook_id': 'str',
-                    }
+        Args:
+            params (dict): {
+                'webhook_id': 'str',
+            }
 
-                Returns:
-                    None
-                """
+        Returns:
+            None
+        """
 
         self.board_mgr.delete_board(params)
 
     @transaction(scope="workspace_member:write")
-    @check_required(['board_id'])
+    @check_required(["board_id"])
     def get(self, params):
         """Get board
 
-                Args:
-                    params (dict): {
-                        'board_id': 'str',
-                        'only': 'list'
-                    }
+        Args:
+            params (dict): {
+                'board_id': 'str',
+                'only': 'list'
+            }
 
-                Returns:
-                    board_vo (object)
-                """
+        Returns:
+            board_vo (object)
+        """
 
-        return self.board_mgr.get_board(params['board_id'])
+        return self.board_mgr.get_board(params["board_id"])
 
     @transaction(scope="workspace_member:write")
-    @append_query_filter(['board_id', 'name'])
+    @append_query_filter(["board_id", "name"])
     def list(self, params):
         """List boards
 
-                Args:
-                    params (dict): {
-                        'board_id': 'str',
-                        'name': 'str',
-                        'query': 'dict'
-                    }
+        Args:
+            params (dict): {
+                'board_id': 'str',
+                'name': 'str',
+                'query': 'dict'
+            }
 
-                Returns:
-                    board_vos (object)
-                    total_count
-                """
+        Returns:
+            board_vos (object)
+            total_count
+        """
 
-        query = params.get('query', {})
+        query = params.get("query", {})
         self._create_default_board()
 
         return self.board_mgr.list_boards(query)
 
     @transaction(scope="workspace_member:write")
-    @check_required(['query'])
+    @check_required(["query"])
     def stat(self, params):
         """Stat boards
 
-                Args:
-                    params (dict): {
-                        'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
-                    }
+        Args:
+            params (dict): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+            }
 
-                Returns:
-                    values (list) : 'list of statistics data'
-                """
+        Returns:
+            values (list) : 'list of statistics data'
+        """
 
-        query = params.get('query', {})
+        query = params.get("query", {})
         return self.board_mgr.stat_boards(query)
 
-    @cache.cacheable(key='board:default:init', expire=300)
+    @cache.cacheable(key="board:default:init", expire=300)
     def _create_default_board(self):
         board_vos, total_count = self.board_mgr.list_boards()
         installed_boards = [board_vo.name for board_vo in board_vos]
