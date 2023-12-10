@@ -1,7 +1,7 @@
 REMOTE_URL:
-- file:///opt/spaceone/board/config/database.yaml
-- file:///opt/spaceone/board/config/shared.yaml
-- file:///opt/spaceone/board/config/application.yaml
+  - file:///opt/spaceone/board/config/database.yaml
+  - file:///opt/spaceone/board/config/shared.yaml
+  - file:///opt/spaceone/board/config/application.yaml
 GLOBAL:
   MAX_WORKERS: 1000
   DATABASES:
@@ -31,13 +31,3 @@ GLOBAL:
       file:
         type: file
         filename: /var/log/spaceone/board.log
-
-  HANDLERS:
-    authentication:
-    - backend: spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler
-      uri: grpc+ssl://identity.dev.spaceone.dev:443/v1/Domain/get_public_key
-    authorization:
-    - backend: spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler
-      uri: grpc+ssl://identity.dev.spaceone.dev:443/v1/Authorization/verify
-    mutation:
-    - backend: spaceone.core.handler.mutation_handler.SpaceONEMutationHandler
