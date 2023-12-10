@@ -16,6 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class PostService(BaseService):
+    service = "board"
+    resource = "Post"
+    permission_group = "COMPOUND"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,10 +26,7 @@ class PostService(BaseService):
         self.board_mgr: BoardManager = self.locator.get_manager('BoardManager')
         self.file_mgr = None
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN',
-        'authorization.require_domain_id': True
-    })
+    @transaction(scope="domain_admin:write")
     @check_required(['board_id', 'title', 'contents'])
     def create(self, params):
         """Create post
@@ -91,10 +91,7 @@ class PostService(BaseService):
 
         return post_vo
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN',
-        'authorization.require_domain_id': True
-    })
+    @transaction(scope="domain_admin:write")
     @check_required(['board_id', 'post_id'])
     def update(self, params):
         """Update post
@@ -153,18 +150,12 @@ class PostService(BaseService):
 
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN',
-        'authorization.require_domain_id': True
-    })
+    @transaction(scope="domain_admin:write")
     @check_required(['board_id', 'post_id'])
     def send_notification(self, params):
         pass
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN',
-        'authorization.require_domain_id': True
-    })
+    @transaction(scope="domain_admin:write")
     @check_required(['board_id', 'post_id'])
     def delete(self, params):
         """Delete post
@@ -194,9 +185,7 @@ class PostService(BaseService):
 
         self.post_mgr.delete_post_vo(post_vo)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN'
-    })
+    @transaction(scope="workspace_member:write")
     @check_required(['board_id', 'post_id'])
     def get(self, params):
         """Get post
@@ -228,9 +217,7 @@ class PostService(BaseService):
 
         return post_vo, files_info
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN'
-    })
+    @transaction(scope="workspace_member:write")
     @check_required(['board_id'])
     @append_query_filter(['board_id', 'post_id', 'post_type', 'category', 'writer', 'scope', 'user_id',
                           'user_domain_id', 'domain_id', 'user_domains'])
@@ -259,9 +246,7 @@ class PostService(BaseService):
         query = params.get('query', {})
         return self.post_mgr.list_boards(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PUBLIC_OR_DOMAIN'
-    })
+    @transaction(scope="workspace_member:write")
     @check_required(['query'])
     @append_query_filter(['user_domains'])
     def stat(self, params):

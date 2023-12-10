@@ -12,12 +12,15 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class BoardService(BaseService):
+    service = "board"
+    resource = "Board"
+    permission_group = "GLOBAL"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.board_mgr: BoardManager = self.locator.get_manager('BoardManager')
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="admin:write")
     @check_required(['name'])
     def create(self, params):
         """Create board
@@ -35,7 +38,7 @@ class BoardService(BaseService):
 
         return self.board_mgr.create_board(params)
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="admin:write")
     @check_required(['board_id'])
     def update(self, params):
         """Update board
@@ -52,7 +55,7 @@ class BoardService(BaseService):
                 """
         return self.board_mgr.update_board(params)
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="admin:write")
     @check_required(['board_id'])
     def set_categories(self, params):
         """Create board
@@ -71,7 +74,7 @@ class BoardService(BaseService):
 
         return self.board_mgr.update_board(params)
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="admin:write")
     @check_required(['board_id'])
     def delete(self, params):
         """Delete board
@@ -87,7 +90,7 @@ class BoardService(BaseService):
 
         self.board_mgr.delete_board(params)
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="workspace_member:write")
     @check_required(['board_id'])
     def get(self, params):
         """Get board
@@ -104,7 +107,7 @@ class BoardService(BaseService):
 
         return self.board_mgr.get_board(params['board_id'])
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="workspace_member:write")
     @append_query_filter(['board_id', 'name'])
     def list(self, params):
         """List boards
@@ -126,7 +129,7 @@ class BoardService(BaseService):
 
         return self.board_mgr.list_boards(query)
 
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
+    @transaction(scope="workspace_member:write")
     @check_required(['query'])
     def stat(self, params):
         """Stat boards
