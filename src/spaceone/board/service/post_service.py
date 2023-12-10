@@ -1,5 +1,6 @@
 import copy
 import logging
+from typing import Tuple, Union
 
 from spaceone.core.service import *
 from spaceone.board.error import *
@@ -7,6 +8,7 @@ from spaceone.board.error import *
 from spaceone.board.manager.post_manager import PostManager
 from spaceone.board.manager.board_manager import BoardManager
 from spaceone.board.manager.file_manager import FileManager
+from spaceone.board.model.post_model import Post
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,24 +24,25 @@ class PostService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.post_mgr: PostManager = self.locator.get_manager("PostManager")
-        self.board_mgr: BoardManager = self.locator.get_manager("BoardManager")
+        self.post_mgr: PostManager = self.locator.get_manager(PostManager)
+        self.board_mgr: BoardManager = self.locator.get_manager(BoardManager)
         self.file_mgr = None
 
     @transaction(scope="domain_admin:write")
     @check_required(["board_id", "title", "contents"])
-    def create(self, params):
+    def create(self, params: dict) -> Post:
         """Create post
 
         Args:
             params (dict): {
-                'board_id': 'str',
+                'board_id': 'str',         # required
                 'category': 'str',
-                'title': 'str',
-                'contents': 'str',
+                'title': 'str',            # required
+                'contents': 'str',         # required
+                'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
-                'files' : 'list',
+                'permission_group': 'str', # required
                 'domain_id': 'str',
                 'user_id': 'str'(meta)
             }
@@ -51,18 +54,8 @@ class PostService(BaseService):
         domain_id = params.get("domain_id")
         params["user_id"] = self.transaction.get_meta("user_id")
         params["user_domain_id"] = self.transaction.get_meta("domain_id")
-        params["post_type"] = "SYSTEM"
-        role_type = self.transaction.get_meta("authorization.role_type")
 
         file_ids = params.get("files", [])
-
-        if domain_id:
-            if role_type != "SYSTEM":
-                params["post_type"] = "INTERNAL"
-
-            params["scope"] = "DOMAIN"
-        else:
-            params["scope"] = "PUBLIC"
 
         board_vo = self.board_mgr.get_board(board_id)
         categories = board_vo.categories
@@ -83,7 +76,7 @@ class PostService(BaseService):
 
         params["options"] = _options
 
-        self.file_mgr: FileManager = self.locator.get_manager("FileManager")
+        self.file_mgr: FileManager = self.locator.get_manager(FileManager)
         self._check_files(file_ids, domain_id)
         post_vo = self.post_mgr.create_board(params)
 
@@ -93,19 +86,19 @@ class PostService(BaseService):
 
     @transaction(scope="domain_admin:write")
     @check_required(["board_id", "post_id"])
-    def update(self, params):
+    def update(self, params: dict) -> dict:
         """Update post
 
         Args:
             params (dict): {
-                'board_id': 'str',
-                'post_id': 'str',
+                'board_id': 'str',   # required
+                'post_id': 'str',    # required
                 'category': 'str',
                 'title': 'str',
                 'contents': 'str',
+                'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
-                'files' : 'list',
                 'domain_id': 'str'
             }
 
@@ -133,7 +126,7 @@ class PostService(BaseService):
             params["options"] = _options
 
         if "files" in params:
-            self.file_mgr: FileManager = self.locator.get_manager("FileManager")
+            self.file_mgr: FileManager = self.locator.get_manager(FileManager)
 
             new_file_ids = set(params["files"])
             old_file_ids = set(post_vo.files)
@@ -156,19 +149,61 @@ class PostService(BaseService):
 
     @transaction(scope="domain_admin:write")
     @check_required(["board_id", "post_id"])
-    def send_notification(self, params):
-        pass
-
-    @transaction(scope="domain_admin:write")
-    @check_required(["board_id", "post_id"])
-    def delete(self, params):
+    def send_notification(self, params: dict) -> None:
         """Delete post
 
         Args:
             params (dict): {
-                'board_id': 'str',
-                'post_id': 'str',
+                'board_id': 'str',    # required
+                'post_id': 'str',     # required
                 'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+        pass
+
+    @transaction(scope="domain_admin:write")
+    @check_required(["board_id", "post_id"])
+    def delete(self, params: dict) -> None:
+        """Delete post
+
+        Args:
+            params (dict): {
+                'board_id': 'str',    # required
+                'post_id': 'str',     # required
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        board_id = params["board_id"]
+        post_id = params["post_id"]
+        domain_id = params.get("domain_id")
+
+        post_vo = self.post_mgr.get_post(board_id, post_id)
+
+        if len(post_vo.files) > 0:
+            self.file_mgr: FileManager = self.locator.get_manager(FileManager)
+
+            for file_id in post_vo.files:
+                self.file_mgr.delete_file(file_id, domain_id)
+
+        self.post_mgr.delete_post_vo(post_vo)
+
+    @transaction(scope="workspace_member:write")
+    @check_required(["board_id", "post_id"])
+    def get(self, params: dict) -> Tuple[dict, list[Union[dict, None]]]:
+        """Get post
+
+        Args:
+            params (dict): {
+                'board_id': 'str',    # required
+                'post_id': 'str',     # required
+                'domain_id': 'str,
             }
 
         Returns:
@@ -180,40 +215,9 @@ class PostService(BaseService):
         domain_id = params.get("domain_id")
 
         post_vo = self.post_mgr.get_post(board_id, post_id)
-
-        if len(post_vo.files) > 0:
-            self.file_mgr: FileManager = self.locator.get_manager("FileManager")
-
-            for file_id in post_vo.files:
-                self.file_mgr.delete_file(file_id, domain_id)
-
-        self.post_mgr.delete_post_vo(post_vo)
-
-    @transaction(scope="workspace_member:write")
-    @check_required(["board_id", "post_id"])
-    def get(self, params):
-        """Get post
-
-        Args:
-            params (dict): {
-                'board_id': 'str',
-                'post_id': 'str',
-                'domain_id': 'str,
-                'only': 'list'
-            }
-
-        Returns:
-            post_vo (object)
-        """
-
-        board_id = params["board_id"]
-        post_id = params["post_id"]
-        domain_id = params.get("domain_id")
-
-        post_vo = self.post_mgr.get_post(board_id, post_id, params.get("only"))
         self.post_mgr.increase_view_count(post_vo)
 
-        self.file_mgr: FileManager = self.locator.get_manager("FileManager")
+        self.file_mgr: FileManager = self.locator.get_manager(FileManager)
 
         files_info = []
         if len(post_vo.files) > 0:
@@ -239,21 +243,22 @@ class PostService(BaseService):
             "user_domains",
         ]
     )
-    def list(self, params):
+    def list(self, params: dict) -> dict:
         """List posts
 
         Args:
             params (dict): {
-                'board_id': 'str',
-                'post_id': 'str',
-                'post_type': 'str',
-                'category': 'str',
-                'scope': 'str',
-                'writer': 'str',
-                'user_id': 'str',
-                'domain_id': 'str',
                 'query': 'dict',
-                'user_domains': 'list' // from meta
+                'board_id': 'str',             # required
+                'post_id': 'str',
+                'category': 'str',
+                'writer': 'str',
+                'is_pinned': 'bool',
+                'is_popup': 'bool',
+                'user_domains': 'list'(meta)
+                'user_id': 'str',
+                'permission_group': 'str',
+                'domain_id': 'str',
             }
 
         Returns:
@@ -267,17 +272,20 @@ class PostService(BaseService):
     @transaction(scope="workspace_member:write")
     @check_required(["query"])
     @append_query_filter(["user_domains"])
-    def stat(self, params):
+    def stat(self, params: dict) -> dict:
         """List posts
 
         Args:
             params (dict): {
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'user_domains': 'list' // from meta
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',    # required
+                'user_domains': 'list'                                     # required
             }
 
         Returns:
-            values (list) : 'list of statistics data'
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
         """
 
         query = params.get("query", {})
