@@ -1,5 +1,1 @@
-DEFAULT_BOARDS = [
-    {
-        'name': 'Notice'
-    }
-]
+DEFAULT_BOARDS = [{"name": "Notice"}]
