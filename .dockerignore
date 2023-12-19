@@ -8,4 +8,4 @@ build
 test
 *.egg-info
 __pycache__
-.idea
+.idea/src/spaceone/board/service/post_service.py

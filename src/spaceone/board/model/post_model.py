@@ -4,7 +4,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class Post(MongoModel):
-    board_id = StringField(max_length=40)
+    board_type = StringField(max_length=40)
     post_id = StringField(max_length=40, generate_id="post", unique=True)
     category = StringField(null=True, default=None)
     title = StringField(max_length=255)
@@ -13,10 +13,9 @@ class Post(MongoModel):
     view_count = IntField(default=0)
     writer = StringField()
     files = ListField(StringField(), default=[])
-    permission_group = StringField(max_length=40, choices=('GLOBAL', 'DOMAIN'))
-    domain_id = StringField(max_length=40, default=None, null=True)
+    resource_group = StringField(max_length=40, choices=("SYSTEM", "DOMAIN"))
+    domain_id = StringField(max_length=40)
     user_id = StringField(max_length=40)
-    user_domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
 
@@ -30,22 +29,20 @@ class Post(MongoModel):
             "files",
         ],
         "minimal_fields": [
-            "board_id",
+            "board_type",
             "post_id",
             "category",
             "title",
-            'permission_group',
+            "resource_group",
             "domain_id",
         ],
-        "change_query_keys": {"user_domains": "domain_id"},
         "ordering": ["-created_at"],
         "indexes": [
-            "board_id",
+            "board_type",
             "category",
             "writer",
-            'permission_group',
+            "resource_group",
             "domain_id",
             "user_id",
-            "user_domain_id",
         ],
     }

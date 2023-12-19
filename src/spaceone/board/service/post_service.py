@@ -22,7 +22,6 @@ class PostService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.post_mgr: PostManager = self.locator.get_manager(PostManager)
-        self.board_mgr: BoardManager = self.locator.get_manager(BoardManager)
         self.file_mgr = None
 
     @transaction(
@@ -35,37 +34,26 @@ class PostService(BaseService):
 
         Args:
             params (dict): {
-                'board_id': 'str',         # required
+                'board_type': 'str',       # required
                 'category': 'str',
                 'title': 'str',            # required
                 'contents': 'str',         # required
                 'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
-                'permission_group': 'str', # required
-                'domain_id': 'str',
-                'user_id': 'str'(meta)
+                'resource_group': 'str',   # required
+                'domain_id': 'str',        # injected from auth
+                'user_id': 'str'           # injected from auth
             }
 
         Returns:
             post_vo (object)
         """
-        board_id = params["board_id"]
-        domain_id = params.get("domain_id")
-        params["user_id"] = self.transaction.get_meta("user_id")
-        params["user_domain_id"] = self.transaction.get_meta("domain_id")
-
-        file_ids = params.get("files", [])
-
-        board_vo = self.board_mgr.get_board(board_id)
-        categories = board_vo.categories
-
-        if category := params.get("category"):
-            if category not in categories:
-                raise ERROR_INVALID_CATEGORY(category=category, categories=categories)
+        resource_group = params["resource_group"]
+        if resource_group == "SYSTEM":
+            params["domain_id"] = "*"
 
         _options = {"is_pinned": False, "is_popup": False}
-
         if options := params.get("options", {}):
             self._valid_options(options)
 
@@ -73,14 +61,14 @@ class PostService(BaseService):
                 _options.update({"is_pinned": options["is_pinned"]})
             if "is_popup" in options:
                 _options.update({"is_popup": options["is_popup"]})
-
         params["options"] = _options
 
+        file_ids = params.get("files", [])
         self.file_mgr: FileManager = self.locator.get_manager(FileManager)
-        self._check_files(file_ids, domain_id)
-        post_vo = self.post_mgr.create_board(params)
+        self._check_files(file_ids)
+        post_vo = self.post_mgr.create_post(params)
 
-        self._update_file_reference(post_vo.post_id, file_ids, domain_id)
+        self._update_file_reference(post_vo.post_id, file_ids)
 
         return post_vo
 
@@ -88,13 +76,12 @@ class PostService(BaseService):
         permission="board:Post.write",
         role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
     )
-    @check_required(["board_id", "post_id"])
-    def update(self, params: dict) -> dict:
+    @check_required(["post_id"])
+    def update(self, params: dict) -> Post:
         """Update post
 
         Args:
             params (dict): {
-                'board_id': 'str',   # required
                 'post_id': 'str',    # required
                 'category': 'str',
                 'title': 'str',
@@ -102,23 +89,17 @@ class PostService(BaseService):
                 'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str',        # injected from auth
+                'user_id': 'str'           # injected from auth
             }
 
         Returns:
             post_vo (object)
         """
-
+        post_id = params["post_id"]
         domain_id = params.get("domain_id")
-        post_vo = self.post_mgr.get_post(params["board_id"], params["post_id"])
 
-        if category := params.get("category"):
-            board_vo = self.board_mgr.get_board(params["board_id"])
-
-            if category not in board_vo.categories:
-                raise ERROR_INVALID_CATEGORY(
-                    category=category, categories=board_vo.categories
-                )
+        post_vo = self.post_mgr.get_post(post_id, domain_id)
 
         if options := params.get("options", {}):
             self._valid_options(options)
@@ -139,14 +120,12 @@ class PostService(BaseService):
                 file_ids_to_be_created = list(new_file_ids - old_file_ids)
 
                 if len(file_ids_to_be_created) > 0:
-                    self._check_files(file_ids_to_be_created, domain_id)
-                    self._update_file_reference(
-                        post_vo.post_id, file_ids_to_be_created, domain_id
-                    )
+                    self._check_files(file_ids_to_be_created)
+                    self._update_file_reference(post_vo.post_id, file_ids_to_be_created)
 
                 if len(file_ids_to_be_deleted) > 0:
                     for file_id in file_ids_to_be_deleted:
-                        self.file_mgr.delete_file(file_id, domain_id)
+                        self.file_mgr.delete_file(file_id)
 
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
@@ -154,15 +133,15 @@ class PostService(BaseService):
         permission="board:Post.write",
         role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
     )
-    @check_required(["board_id", "post_id"])
+    @check_required(["post_id"])
     def send_notification(self, params: dict) -> None:
         """Delete post
 
         Args:
             params (dict): {
-                'board_id': 'str',    # required
                 'post_id': 'str',     # required
-                'domain_id': 'str'
+                'domain_id': 'str'    # injected from auth
+                'user_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -174,86 +153,96 @@ class PostService(BaseService):
         permission="board:Post.write",
         role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
     )
-    @check_required(["board_id", "post_id"])
+    @check_required(["post_id"])
     def delete(self, params: dict) -> None:
         """Delete post
 
         Args:
             params (dict): {
-                'board_id': 'str',    # required
                 'post_id': 'str',     # required
-                'domain_id': 'str'
+                'domain_id': 'str'    # injected from auth
+                'user_id': 'str'      # injected from auth
             }
 
         Returns:
             None
         """
 
-        board_id = params["board_id"]
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
 
-        post_vo = self.post_mgr.get_post(board_id, post_id)
+        post_vo = self.post_mgr.get_post(post_id, domain_id)
 
         if len(post_vo.files) > 0:
             self.file_mgr: FileManager = self.locator.get_manager(FileManager)
 
             for file_id in post_vo.files:
-                self.file_mgr.delete_file(file_id, domain_id)
+                self.file_mgr.delete_file(file_id)
 
         self.post_mgr.delete_post_vo(post_vo)
 
     @transaction(
-        permission="board:Post.write", role_types=["DOMAIN_ADMIN", "DOMAIN_ADMIN"]
+        permission="board:Post.read",
+        role_types=[
+            "SYSTEM_ADMIN",
+            "DOMAIN_ADMIN",
+            "WORKSPACE_OWNER",
+            "WORKSPACE_MEMBER",
+        ],
     )
-    @check_required(["board_id", "post_id"])
-    def get(self, params: dict) -> Tuple[dict, list[Union[dict, None]]]:
+    @change_value_by_rule("APPEND", "domain_id", "*")
+    @change_value_by_rule("APPEND", "workspace_id", "*")
+    @change_value_by_rule("APPEND", "user_projects", "*")
+    @check_required(["post_id"])
+    def get(self, params: dict) -> Tuple[Post, list]:
         """Get post
 
         Args:
             params (dict): {
-                'board_id': 'str',    # required
                 'post_id': 'str',     # required
-                'domain_id': 'str,
+                'domain_id': 'str,    # injected from auth
+                'user_id': 'str'      # injected from auth
             }
 
         Returns:
             post_vo (object)
         """
 
-        board_id = params["board_id"]
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
 
-        post_vo = self.post_mgr.get_post(board_id, post_id)
+        post_vo = self.post_mgr.get_post(post_id, domain_id)
         self.post_mgr.increase_view_count(post_vo)
 
         self.file_mgr: FileManager = self.locator.get_manager(FileManager)
 
         files_info = []
         if len(post_vo.files) > 0:
-            files_info = self._get_files_info_from_file_manager(
-                post_vo.files, domain_id
-            )
+            files_info = self._get_files_info_from_file_manager(post_vo.files)
 
         return post_vo, files_info
 
     @transaction(
-        permission="board:Post.write", role_types=["DOMAIN_ADMIN", "DOMAIN_ADMIN"]
+        permission="board:Post.read",
+        role_types=[
+            "SYSTEM_ADMIN",
+            "DOMAIN_ADMIN",
+            "WORKSPACE_OWNER",
+            "WORKSPACE_MEMBER",
+        ],
     )
-    @check_required(["board_id"])
+    @change_value_by_rule("APPEND", "domain_id", "*")
+    @change_value_by_rule("APPEND", "workspace_id", "*")
+    @change_value_by_rule("APPEND", "user_projects", "*")
     @append_query_filter(
         [
-            "board_id",
+            "board_type",
             "post_id",
-            "post_type",
             "category",
             "writer",
-            "scope",
-            "user_id",
-            "user_domain_id",
             "domain_id",
-            "user_domains",
+            "workspace_id",
+            "user_projects",
         ]
     )
     def list(self, params: dict) -> dict:
@@ -262,16 +251,16 @@ class PostService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict',
-                'board_id': 'str',             # required
+                'board_type': 'str',
                 'post_id': 'str',
                 'category': 'str',
                 'writer': 'str',
                 'is_pinned': 'bool',
                 'is_popup': 'bool',
-                'user_domains': 'list'(meta)
-                'user_id': 'str',
-                'permission_group': 'str',
-                'domain_id': 'str',
+                'domain_id': 'str',        # injected from auth
+                'workspace_id': 'str',     # injected from auth
+                'user_projects': 'list'    # injected from auth
+                'user_id': 'str'           # injected from auth
             }
 
         Returns:
@@ -283,17 +272,29 @@ class PostService(BaseService):
         return self.post_mgr.list_boards(query)
 
     @transaction(
-        permission="board:Post.write", role_types=["DOMAIN_ADMIN", "DOMAIN_ADMIN"]
+        permission="board:Post.read",
+        role_types=[
+            "SYSTEM_ADMIN",
+            "DOMAIN_ADMIN",
+            "WORKSPACE_OWNER",
+            "WORKSPACE_MEMBER",
+        ],
     )
+    @change_value_by_rule("APPEND", "domain_id", "*")
+    @change_value_by_rule("APPEND", "workspace_id", "*")
+    @change_value_by_rule("APPEND", "user_projects", "*")
     @check_required(["query"])
-    @append_query_filter(["user_domains"])
+    @append_query_filter(["domain_id", "workspace_id", "user_projects"])
     def stat(self, params: dict) -> dict:
         """List posts
 
         Args:
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',    # required
-                'user_domains': 'list'                                     # required
+                'domain_id': 'str',                                        # injected from auth
+                'workspace_id': 'str',                                     # injected from auth
+                'user_projects': 'list'                                    # injected from auth
+                'user_id': 'str'                                           # injected from auth
             }
 
         Returns:
@@ -306,31 +307,31 @@ class PostService(BaseService):
         query = params.get("query", {})
         return self.post_mgr.stat_boards(query)
 
-    def _check_files(self, file_ids, domain_id):
+    def _check_files(self, file_ids: list) -> None:
         for file_id in file_ids:
-            self._verify_file(file_id, domain_id)
+            self._verify_file(file_id)
 
-    def _update_file_reference(self, post_id, files, domain_id):
+    def _update_file_reference(self, post_id: str, files: list) -> None:
         for file in files:
             reference = {"resource_id": post_id, "resource_type": "board.Post"}
-            self.file_mgr.update_file_reference(file, reference, domain_id)
+            self.file_mgr.update_file_reference(file, reference)
 
-    def _verify_file(self, file_id, domain_id):
-        file_info = self.file_mgr.get_file(file_id, domain_id)
+    def _verify_file(self, file_id: str) -> None:
+        file_info = self.file_mgr.get_file(file_id)
 
         file_state = file_info.get("state")
         if file_state != "DONE":
             raise ERROR_INVALID_FILE_STATE(file_id=file_id, state=file_state)
 
-    def _get_files_info_from_file_manager(self, file_ids, domain_id):
+    def _get_files_info_from_file_manager(self, file_ids: list):
         files_info = []
         for file_id in file_ids:
-            file_info = self.file_mgr.get_download_url(file_id, domain_id)
+            file_info = self.file_mgr.get_download_url(file_id)
             files_info.append(file_info)
         return files_info
 
     @staticmethod
-    def _valid_options(options):
+    def _valid_options(options: dict) -> None:
         exact_keys = ["is_pinned", "is_popup"]
 
         for key in options:
