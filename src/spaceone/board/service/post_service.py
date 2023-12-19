@@ -6,7 +6,6 @@ from spaceone.core.service import *
 from spaceone.board.error import *
 
 from spaceone.board.manager.post_manager import PostManager
-from spaceone.board.manager.board_manager import BoardManager
 from spaceone.board.manager.file_manager import FileManager
 from spaceone.board.model.post_model import Post
 
@@ -18,9 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 @mutation_handler
 @event_handler
 class PostService(BaseService):
-    service = "board"
     resource = "Post"
-    permission_group = "COMPOUND"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,7 +25,10 @@ class PostService(BaseService):
         self.board_mgr: BoardManager = self.locator.get_manager(BoardManager)
         self.file_mgr = None
 
-    @transaction(scope="domain_admin:write")
+    @transaction(
+        permission="board:Post.write",
+        role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
+    )
     @check_required(["board_id", "title", "contents"])
     def create(self, params: dict) -> Post:
         """Create post
@@ -84,7 +84,10 @@ class PostService(BaseService):
 
         return post_vo
 
-    @transaction(scope="domain_admin:write")
+    @transaction(
+        permission="board:Post.write",
+        role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
+    )
     @check_required(["board_id", "post_id"])
     def update(self, params: dict) -> dict:
         """Update post
@@ -147,7 +150,10 @@ class PostService(BaseService):
 
         return self.post_mgr.update_post_by_vo(params, post_vo)
 
-    @transaction(scope="domain_admin:write")
+    @transaction(
+        permission="board:Post.write",
+        role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
+    )
     @check_required(["board_id", "post_id"])
     def send_notification(self, params: dict) -> None:
         """Delete post
@@ -164,7 +170,10 @@ class PostService(BaseService):
         """
         pass
 
-    @transaction(scope="domain_admin:write")
+    @transaction(
+        permission="board:Post.write",
+        role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
+    )
     @check_required(["board_id", "post_id"])
     def delete(self, params: dict) -> None:
         """Delete post
@@ -194,7 +203,9 @@ class PostService(BaseService):
 
         self.post_mgr.delete_post_vo(post_vo)
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="board:Post.write", role_types=["DOMAIN_ADMIN", "DOMAIN_ADMIN"]
+    )
     @check_required(["board_id", "post_id"])
     def get(self, params: dict) -> Tuple[dict, list[Union[dict, None]]]:
         """Get post
@@ -227,7 +238,9 @@ class PostService(BaseService):
 
         return post_vo, files_info
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="board:Post.write", role_types=["DOMAIN_ADMIN", "DOMAIN_ADMIN"]
+    )
     @check_required(["board_id"])
     @append_query_filter(
         [
@@ -269,7 +282,9 @@ class PostService(BaseService):
         query = params.get("query", {})
         return self.post_mgr.list_boards(query)
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="board:Post.write", role_types=["DOMAIN_ADMIN", "DOMAIN_ADMIN"]
+    )
     @check_required(["query"])
     @append_query_filter(["user_domains"])
     def stat(self, params: dict) -> dict:
