@@ -11,11 +11,11 @@ __all__ = ["PostInfo", "PostsInfo"]
 
 def PostInfo(post_vo: Post, minimal=False, files_info=None):
     info = {
-        "board_id": post_vo.board_id,
+        "board_type": post_vo.board_type,
         "post_id": post_vo.post_id,
         "category": post_vo.category,
         "title": post_vo.title,
-        "permission_group": post_vo.permission_group,
+        "resource_group": post_vo.resource_group,
         "domain_id": post_vo.domain_id,
     }
 
@@ -27,7 +27,6 @@ def PostInfo(post_vo: Post, minimal=False, files_info=None):
                 "writer": post_vo.writer,
                 "options": change_struct_type(post_vo.options),
                 "user_id": post_vo.user_id,
-                "user_domain_id": post_vo.user_domain_id,
                 "created_at": utils.datetime_to_iso8601(post_vo.created_at),
                 "updated_at": utils.datetime_to_iso8601(post_vo.updated_at),
             }

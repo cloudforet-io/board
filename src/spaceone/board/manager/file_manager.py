@@ -14,24 +14,20 @@ class FileManager(BaseManager):
             SpaceConnector, service="file_manager"
         )
 
-    def get_file(self, file_id: str, domain_id: str) -> dict:
-        return self.file_manager_connector.dispatch(
-            "File.get", {"file_id": file_id, "domain_id": domain_id}
-        )
+    def get_file(self, file_id: str) -> dict:
+        return self.file_manager_connector.dispatch("File.get", {"file_id": file_id})
 
-    def update_file_reference(self, file_id: str, reference: dict, domain_id: str) -> dict:
+    def update_file_reference(self, file_id: str, reference: dict) -> dict:
         return self.file_manager_connector.dispatch(
             "File.update",
-            {"file_id": file_id, "reference": reference, "domain_id": domain_id},
+            {"file_id": file_id, "reference": reference},
         )
 
-    def delete_file(self, file_id: str, domain_id: str) -> None:
-        return self.file_manager_connector.dispatch(
-            "File.delete", {"file_id": file_id, "domain_id": domain_id}
-        )
+    def delete_file(self, file_id: str) -> None:
+        return self.file_manager_connector.dispatch("File.delete", {"file_id": file_id})
 
-    @cache.cacheable(key="board:file-download-url:{domain_id}:{file_id}", expire=600)
-    def get_download_url(self, file_id: str, domain_id: str) -> dict:
+    @cache.cacheable(key="board:file-download-url:{file_id}", expire=600)
+    def get_download_url(self, file_id: str) -> dict:
         return self.file_manager_connector.dispatch(
-            "File.get_download_url", {"file_id": file_id, "domain_id": domain_id}
+            "File.get_download_url", {"file_id": file_id}
         )

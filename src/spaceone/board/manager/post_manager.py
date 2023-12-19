@@ -12,8 +12,8 @@ class PostManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.post_model: Post = self.locator.get_model(Post)
 
-    def create_board(self, params: dict) -> Post:
-        def _rollback(vo):
+    def create_post(self, params: dict) -> Post:
+        def _rollback(vo: Post):
             _LOGGER.info(f"[create_post._rollback] " f"Delete post : {vo.name}")
             vo.delete()
 
@@ -37,8 +37,13 @@ class PostManager(BaseManager):
 
         return post_vo.update(params)
 
-    def get_post(self, board_id: str, post_id: str) -> Post:
-        return self.post_model.get(board_id=board_id, post_id=post_id)
+    def get_post(self, post_id: str, domain_id: str = None) -> Post:
+        conditions = {"post_id": post_id}
+
+        if domain_id:
+            conditions["domain_id"] = domain_id
+
+        return self.post_model.get(**conditions)
 
     def list_boards(self, query: Union[dict, None] = None):
         if query is None:
