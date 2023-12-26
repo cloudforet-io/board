@@ -37,6 +37,10 @@ class Post(MongoModel):
             "domain_id",
         ],
         "ordering": ["-created_at"],
+        "change_query_keys": {
+            "is_pinned": "options.is_pinned",
+            "is_popup": "options.is_popup"
+        },
         "indexes": [
             "board_type",
             "category",
