@@ -28,7 +28,7 @@ class PostService(BaseService):
         permission="board:Post.write",
         role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
     )
-    @check_required(["board_id", "title", "contents"])
+    @check_required(["board_type", "title", "contents"])
     def create(self, params: dict) -> Post:
         """Create post
 
@@ -191,8 +191,6 @@ class PostService(BaseService):
         ],
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
-    @change_value_by_rule("APPEND", "workspace_id", "*")
-    @change_value_by_rule("APPEND", "user_projects", "*")
     @check_required(["post_id"])
     def get(self, params: dict) -> Tuple[Post, list]:
         """Get post
@@ -232,17 +230,13 @@ class PostService(BaseService):
         ],
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
-    @change_value_by_rule("APPEND", "workspace_id", "*")
-    @change_value_by_rule("APPEND", "user_projects", "*")
     @append_query_filter(
         [
             "board_type",
             "post_id",
             "category",
             "writer",
-            "domain_id",
-            "workspace_id",
-            "user_projects",
+            "domain_id"
         ]
     )
     def list(self, params: dict) -> dict:
@@ -281,10 +275,8 @@ class PostService(BaseService):
         ],
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
-    @change_value_by_rule("APPEND", "workspace_id", "*")
-    @change_value_by_rule("APPEND", "user_projects", "*")
     @check_required(["query"])
-    @append_query_filter(["domain_id", "workspace_id", "user_projects"])
+    @append_query_filter(["domain_id"])
     def stat(self, params: dict) -> dict:
         """List posts
 
