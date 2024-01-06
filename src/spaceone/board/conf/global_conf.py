@@ -53,3 +53,6 @@ CONNECTORS = {
 
 # Log Settings
 LOG = {}
+
+# System Token Settings
+TOKEN = ""
