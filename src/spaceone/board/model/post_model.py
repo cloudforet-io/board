@@ -13,8 +13,9 @@ class Post(MongoModel):
     view_count = IntField(default=0)
     writer = StringField()
     files = ListField(StringField(), default=[])
-    resource_group = StringField(max_length=40, choices=("SYSTEM", "DOMAIN"))
+    resource_group = StringField(max_length=40, choices=("SYSTEM", "DOMAIN", "WORKSPACE"))
     domain_id = StringField(max_length=40)
+    workspaces = ListField(StringField(), default=None)
     user_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
@@ -27,6 +28,7 @@ class Post(MongoModel):
             "options",
             "writer",
             "files",
+            "workspaces",
         ],
         "minimal_fields": [
             "board_type",
@@ -35,11 +37,13 @@ class Post(MongoModel):
             "title",
             "resource_group",
             "domain_id",
+            "workspaces",
         ],
         "ordering": ["-created_at"],
         "change_query_keys": {
             "is_pinned": "options.is_pinned",
-            "is_popup": "options.is_popup"
+            "is_popup": "options.is_popup",
+            "workspace_id": "workspaces",
         },
         "indexes": [
             "board_type",
@@ -47,6 +51,7 @@ class Post(MongoModel):
             "writer",
             "resource_group",
             "domain_id",
+            "workspaces",
             "user_id",
         ],
     }

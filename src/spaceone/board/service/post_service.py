@@ -34,24 +34,35 @@ class PostService(BaseService):
 
         Args:
             params (dict): {
-                'board_type': 'str',       # required
+                'board_type': 'str',        # required
                 'category': 'str',
-                'title': 'str',            # required
-                'contents': 'str',         # required
+                'title': 'str',             # required
+                'contents': 'str',          # required
                 'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
-                'resource_group': 'str',   # required
-                'domain_id': 'str',        # injected from auth
-                'user_id': 'str'           # injected from auth
+                'workspaces': 'list',       # required
+                'resource_group': 'str',    # required
+                'domain_id': 'str',         # injected from auth
+                'user_id': 'str'            # injected from auth
             }
 
         Returns:
             post_vo (object)
         """
+
         resource_group = params["resource_group"]
         if resource_group == "SYSTEM":
             params["domain_id"] = "*"
+            params["workspaces"] = ["*"]
+        elif resource_group == "DOMAIN":
+            if not params.get("domain_id"):
+                raise ERROR_REQUIRED_PARAMETER(key="domain_id")
+
+            params["workspaces"] = ["*"]
+        else:
+            if not params.get("workspaces"):
+                raise ERROR_REQUIRED_PARAMETER(key="workspaces")
 
         _options = {"is_pinned": False, "is_popup": False}
         if options := params.get("options", {}):
@@ -82,24 +93,29 @@ class PostService(BaseService):
 
         Args:
             params (dict): {
-                'post_id': 'str',    # required
+                'post_id': 'str',           # required
                 'category': 'str',
                 'title': 'str',
                 'contents': 'str',
                 'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
-                'domain_id': 'str',        # injected from auth
-                'user_id': 'str'           # injected from auth
+                'workspaces': 'list',
+                'domain_id': 'str',         # injected from auth
             }
 
         Returns:
             post_vo (object)
         """
+
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
 
         post_vo = self.post_mgr.get_post(post_id, domain_id)
+
+        if "workspaces" in params:
+            if post_vo.resource_group != "WORKSPACE":
+                raise ERROR_NOT_CHANGE_WORKSPACE(resource_group=post_vo.resource_group)
 
         if options := params.get("options", {}):
             self._valid_options(options)
@@ -134,14 +150,13 @@ class PostService(BaseService):
         role_types=["SYSTEM_ADMIN", "DOMAIN_ADMIN"],
     )
     @check_required(["post_id"])
-    def send_notification(self, params: dict) -> None:
+    def send(self, params: dict) -> None:
         """Delete post
 
         Args:
             params (dict): {
                 'post_id': 'str',     # required
                 'domain_id': 'str'    # injected from auth
-                'user_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -161,7 +176,6 @@ class PostService(BaseService):
             params (dict): {
                 'post_id': 'str',     # required
                 'domain_id': 'str'    # injected from auth
-                'user_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -191,6 +205,7 @@ class PostService(BaseService):
         ],
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @check_required(["post_id"])
     def get(self, params: dict) -> Tuple[Post, list]:
         """Get post
@@ -199,7 +214,7 @@ class PostService(BaseService):
             params (dict): {
                 'post_id': 'str',     # required
                 'domain_id': 'str,    # injected from auth
-                'user_id': 'str'      # injected from auth
+                'workspace_id': 'str' # injected from auth
             }
 
         Returns:
@@ -208,8 +223,9 @@ class PostService(BaseService):
 
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
+        workspace_id = params.get("workspace_id")
 
-        post_vo = self.post_mgr.get_post(post_id, domain_id)
+        post_vo = self.post_mgr.get_post(post_id, domain_id, workspace_id)
         self.post_mgr.increase_view_count(post_vo)
 
         self.file_mgr: FileManager = self.locator.get_manager(FileManager)
@@ -230,13 +246,15 @@ class PostService(BaseService):
         ],
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "board_type",
             "post_id",
             "category",
             "writer",
-            "domain_id"
+            "domain_id",
+            "workspace_id",
         ]
     )
     def list(self, params: dict) -> dict:
@@ -253,8 +271,6 @@ class PostService(BaseService):
                 'is_popup': 'bool',
                 'domain_id': 'str',        # injected from auth
                 'workspace_id': 'str',     # injected from auth
-                'user_projects': 'list'    # injected from auth
-                'user_id': 'str'           # injected from auth
             }
 
         Returns:
@@ -275,6 +291,7 @@ class PostService(BaseService):
         ],
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @check_required(["query"])
     @append_query_filter(["domain_id"])
     def stat(self, params: dict) -> dict:
@@ -285,8 +302,6 @@ class PostService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',    # required
                 'domain_id': 'str',                                        # injected from auth
                 'workspace_id': 'str',                                     # injected from auth
-                'user_projects': 'list'                                    # injected from auth
-                'user_id': 'str'                                           # injected from auth
             }
 
         Returns:
@@ -324,8 +339,8 @@ class PostService(BaseService):
 
     @staticmethod
     def _valid_options(options: dict) -> None:
-        exact_keys = ["is_pinned", "is_popup"]
+        supported_options_key = ["is_pinned", "is_popup"]
 
-        for key in options:
-            if key not in exact_keys:
-                raise ERROR_INVALID_KEY_IN_OPTIONS
+        for key in options.keys():
+            if key not in supported_options_key:
+                raise ERROR_INVALID_KEY_IN_OPTIONS(key=key)

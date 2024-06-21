@@ -37,11 +37,14 @@ class PostManager(BaseManager):
 
         return post_vo.update(params)
 
-    def get_post(self, post_id: str, domain_id: str = None) -> Post:
+    def get_post(self, post_id: str, domain_id: str = None, workspace_id: list = None) -> Post:
         conditions = {"post_id": post_id}
 
         if domain_id:
             conditions["domain_id"] = domain_id
+
+        if workspace_id:
+            conditions["workspaces"] = workspace_id
 
         return self.post_model.get(**conditions)
 
