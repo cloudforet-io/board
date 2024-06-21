@@ -21,6 +21,13 @@ class Post(BaseAPI, post_pb2_grpc.PostServicer):
         with self.locator.get_service(PostService, metadata) as post_service:
             return self.locator.get_info(PostInfo, post_service.update(params))
 
+    def send(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service(PostService, metadata) as post_service:
+            post_service.send(params)
+            return self.locator.get_info(EmptyInfo)
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 
