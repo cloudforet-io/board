@@ -29,7 +29,7 @@ setup(
     install_requires=["spaceone-core", "spaceone-api"],
     package_data={
         "spaceone": [
-            "board`/template/*.html",
+            "board/template/*.html",
         ]
     },
     zip_safe=False,

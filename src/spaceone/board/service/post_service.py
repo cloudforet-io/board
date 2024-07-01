@@ -171,9 +171,10 @@ class PostService(BaseService):
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
 
+        post_vo = self.post_mgr.get_post(post_id, domain_id)
+
         self._check_send_notice_email(post_id, domain_id)
 
-        post_vo = self.post_mgr.get_post(post_id, domain_id)
         self.identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
         self.config_mgr: ConfigManager = self.locator.get_manager(ConfigManager)
 
