@@ -14,33 +14,6 @@ JINJA_ENV = Environment(
     loader=FileSystemLoader(searchpath=TEMPLATE_PATH), autoescape=select_autoescape()
 )
 
-LANGUAGE_MAPPER = {
-    "default": {
-        "reset_password": "Reset your password",
-        "temp_password": "Your password has been changed",
-        "verify_email": "Verify your notification email",
-        "invite_external_user": "You've been invited to join.",
-    },
-    "ko": {
-        "reset_password": "비밀번호 재설정 안내",
-        "temp_password": "임시 비밀번호 발급 안내",
-        "verify_email": "알림전용 이메일 계정 인증 안내",
-        "invite_external_user": "계정 초대 안내.",
-    },
-    "en": {
-        "reset_password": "Reset your password",
-        "temp_password": "Your password has been changed",
-        "verify_email": "Verify your notification email",
-        "invite_external_user": "You've been invited to join.",
-    },
-    "ja": {
-        "reset_password": "パスワードリセットのご案内",
-        "temp_password": "仮パスワード発行のご案内",
-        "verify_email": "通知メールアカウント認証のご案内",
-        "invite_external_user": "参加するように招待されました",
-    },
-}
-
 
 class EmailManager(BaseManager):
     def __init__(self, *args, **kwargs):
@@ -60,3 +33,7 @@ class EmailManager(BaseManager):
         subject = f"[{service_name}] {post_title}"
 
         self.smtp_connector.send_email(email, subject, email_contents)
+
+    @staticmethod
+    def _get_service_name():
+        return config.get_global("EMAIL_SERVICE_NAME")
