@@ -60,3 +60,7 @@ class EmailManager(BaseManager):
         subject = f"[{service_name}] {post_title}"
 
         self.smtp_connector.send_email(email, subject, email_contents)
+
+    @staticmethod
+    def _get_service_name():
+        return config.get_global("EMAIL_SERVICE_NAME")
