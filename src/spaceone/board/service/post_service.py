@@ -2,11 +2,15 @@ import copy
 import logging
 from typing import Tuple, Union
 
+from spaceone.core import config, utils, cache
 from spaceone.core.service import *
-from spaceone.board.error import *
 
+from spaceone.board.error import *
+from spaceone.board.manager.config_manager import ConfigManager
+from spaceone.board.manager.email_manager import EmailManager
 from spaceone.board.manager.post_manager import PostManager
 from spaceone.board.manager.file_manager import FileManager
+from spaceone.board.manager.identity_manager import IdentityManager
 from spaceone.board.model.post_model import Post
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,6 +27,8 @@ class PostService(BaseService):
         super().__init__(*args, **kwargs)
         self.post_mgr: PostManager = self.locator.get_manager(PostManager)
         self.file_mgr = None
+        self.identity_mgr = None
+        self.config_mgr = None
 
     @transaction(
         permission="board:Post.write",
@@ -162,7 +168,70 @@ class PostService(BaseService):
         Returns:
             None
         """
-        pass
+        post_id = params["post_id"]
+        domain_id = params.get("domain_id")
+
+        self._check_send_notice_email(post_id, domain_id)
+
+        post_vo = self.post_mgr.get_post(post_id, domain_id)
+        self.identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
+        self.config_mgr: ConfigManager = self.locator.get_manager(ConfigManager)
+
+        verified_user_emails_info = {}
+
+        if post_vo.resource_group == "SYSTEM":
+            domain_ids = self._get_enabled_state_domain_ids()
+
+            for domain_id in domain_ids:
+                language = self._get_language_from_domain_config(domain_id)
+                if language not in verified_user_emails_info:
+                    verified_user_emails_info[language] = []
+
+                users_emails = self._get_verified_user_emails_from_domain(domain_id)
+                verified_user_emails_info[language].extend(users_emails)
+        elif post_vo.resource_group == "DOMAIN":
+            language = self._get_language_from_domain_config(domain_id)
+            if language not in verified_user_emails_info:
+                verified_user_emails_info[language] = []
+
+            users_emails = self._get_verified_user_emails_from_domain(domain_id)
+            verified_user_emails_info[language].extend(users_emails)
+        else:
+            if post_vo.workspaces:
+                verified_user_emails = []
+                language = self._get_language_from_domain_config(domain_id)
+                verified_user_emails_info[language] = []
+
+                enabled_workspaces = (
+                    self._get_enabled_state_workspace_ids_from_post_vo_workspaces(
+                        domain_id, post_vo.workspaces
+                    )
+                )
+                for workspace_id in enabled_workspaces:
+                    users_emails = self._get_verified_user_emails_from_workspace(
+                        workspace_id, domain_id
+                    )
+                    verified_user_emails.extend(users_emails)
+
+                verified_user_emails_info[language].extend(
+                    list(set(verified_user_emails))
+                )
+
+        if verified_user_emails_info:
+            email_manager = EmailManager()
+
+            _LOGGER.debug(f"[send] start to send email to verified user emails")
+
+            for language, verified_user_emails in verified_user_emails_info.items():
+                for email in verified_user_emails:
+                    email_manager.send_notification_email(
+                        email, language, post_vo.contents, post_vo.title
+                    )
+
+        total_count = sum(
+            [len(emails) for emails in verified_user_emails_info.values()]
+        )
+        _LOGGER.debug(f"[send] verified user email count: {total_count}")
 
     @transaction(
         permission="board:Post.write",
@@ -336,6 +405,126 @@ class PostService(BaseService):
             file_info = self.file_mgr.get_download_url(file_id)
             files_info.append(file_info)
         return files_info
+
+    def _get_enabled_state_domain_ids(self):
+        query_filter = {"filter": [{"k": "state", "v": "ENABLED", "o": "eq"}]}
+
+        domains_info = self.identity_mgr.list_domains({"query": query_filter})
+        domain_ids = [domain["domain_id"] for domain in domains_info["results"]]
+
+        return domain_ids
+
+    def _get_verified_user_emails_from_domain(self, domain_id: str) -> list:
+        user_emails = []
+        query_filter = {
+            "only": [
+                "user_id",
+                "state",
+                "email",
+                "email_verified",
+                "domain_id",
+            ],
+            "filter": [
+                {"k": "domain_id", "v": domain_id, "o": "eq"},
+                {"k": "state", "v": "ENABLED", "o": "eq"},
+                {"k": "email_verified", "v": True, "o": "eq"},
+            ],
+        }
+        response = self.identity_mgr.list_users(domain_id, {"query": query_filter})
+        users_info = response.get("results", [])
+        total_count = response.get("total_count", 0)
+        user_emails.extend([user["email"] for user in users_info])
+
+        _LOGGER.debug(
+            f"[_get_verified_user_emails_from_domain] user email count: {total_count} in domain_id: {domain_id}"
+        )
+
+        return user_emails
+
+    def _get_enabled_state_workspace_ids_from_post_vo_workspaces(
+        self, domain_id: str, workspace_ids: list
+    ) -> list:
+        enabled_workspaces_in_domain_set = set(
+            self._get_enabled_state_workspaces(domain_id)
+        )
+        workspace_ids_set = set(workspace_ids)
+        common_workspace_ids = enabled_workspaces_in_domain_set & workspace_ids_set
+        return list(common_workspace_ids)
+
+    def _get_enabled_state_workspaces(self, domain_id: str) -> list:
+        workspace_ids = []
+        query_filter = {
+            "filter": [
+                {"k": "domain_id", "v": domain_id, "o": "eq"},
+                {"k": "state", "v": "ENABLED", "o": "eq"},
+            ]
+        }
+
+        workspaces_info = self.identity_mgr.list_workspaces(
+            {"query": query_filter}, domain_id
+        )
+        workspace_ids.extend(
+            [
+                workspace_info["workspace_id"]
+                for workspace_info in workspaces_info["results"]
+            ]
+        )
+
+        return workspace_ids
+
+    def _get_verified_user_emails_from_workspace(
+        self, workspace_id: str, domain_id: str
+    ) -> list:
+        workspace_user_emails = []
+        query_filter = {
+            "filter": [
+                {"k": "state", "v": "ENABLED", "o": "eq"},
+                {"k": "domain_id", "v": domain_id, "o": "eq"},
+                {"k": "email_verified", "v": True, "o": "eq"},
+            ],
+        }
+        response = self.identity_mgr.list_workspace_users(
+            {"query": query_filter, "workspace_id": workspace_id},
+            domain_id,
+            workspace_id,
+        )
+        users_info = response.get("results", [])
+        total_count = response.get("total_count", 0)
+        workspace_user_emails.extend([user["email"] for user in users_info])
+
+        _LOGGER.debug(
+            f"[_get_verified_user_emails_from_workspace] user email count: {total_count} in workspace_id: {workspace_id}"
+        )
+
+        return workspace_user_emails
+
+    def _get_language_from_domain_config(self, domain_id: str) -> str:
+        language = "en"
+        try:
+            domain_config_info = self.config_mgr.get_domain_config(domain_id)
+            domain_config_data = domain_config_info.get("data", {})
+            language = domain_config_data.get("language", "en")
+        except Exception:
+            _LOGGER.debug(
+                f"[_get_language_from_domain_config] {domain_id} domain config not found."
+            )
+
+        return language
+
+    @staticmethod
+    def _check_send_notice_email(post_id: str, domain_id: str) -> None:
+        if cache.is_set():
+            cached_send_notice_email_info = cache.get(
+                f"board:post:send:{post_id}:{domain_id}"
+            )
+            if cached_send_notice_email_info:
+                raise ERROR_NOTICE_EMAIL_ALREADY_SENT(post_id=post_id)
+            else:
+                cache.set(
+                    f"board:post:send:{post_id}:{domain_id}",
+                    True,
+                    expire=180,
+                )
 
     @staticmethod
     def _valid_options(options: dict) -> None:

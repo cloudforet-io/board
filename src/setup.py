@@ -27,5 +27,10 @@ setup(
     license="Apache License 2.0",
     packages=find_packages(),
     install_requires=["spaceone-core", "spaceone-api"],
+    package_data={
+        "spaceone": [
+            "board`/template/*.html",
+        ]
+    },
     zip_safe=False,
 )
