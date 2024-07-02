@@ -11,7 +11,8 @@ _LOGGER = logging.getLogger(__name__)
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), f"../template")
 JINJA_ENV = Environment(
-    loader=FileSystemLoader(searchpath=TEMPLATE_PATH), autoescape=select_autoescape()
+    loader=FileSystemLoader(searchpath=TEMPLATE_PATH),
+    autoescape=select_autoescape(enabled_extensions="html"),
 )
 
 
