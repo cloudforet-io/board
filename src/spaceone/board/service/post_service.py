@@ -1,8 +1,8 @@
 import copy
 import logging
-from typing import Tuple, Union
+from typing import Tuple
 
-from spaceone.core import config, utils, cache
+from spaceone.core import config, cache
 from spaceone.core.service import *
 
 from spaceone.board.error import *
@@ -521,10 +521,13 @@ class PostService(BaseService):
             if cached_send_notice_email_info:
                 raise ERROR_NOTICE_EMAIL_ALREADY_SENT(post_id=post_id)
             else:
+                email_send_retry_interval = config.get_global(
+                    "EMAIL_SEND_RETRY_INTERVAL", 180
+                )
                 cache.set(
                     f"board:post:send:{post_id}:{domain_id}",
                     True,
-                    expire=180,
+                    expire=email_send_retry_interval,
                 )
 
     @staticmethod

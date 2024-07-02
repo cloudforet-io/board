@@ -1,5 +1,6 @@
 # Email Settings
 EMAIL_SERVICE_NAME = "Cloudforet"
+EMAIL_SEND_RETRY_INTERVAL = 180
 
 # Database Settings
 DATABASES = {
