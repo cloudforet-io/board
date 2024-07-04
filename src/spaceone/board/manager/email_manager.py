@@ -24,16 +24,22 @@ class EmailManager(BaseManager):
     def send_notification_email(
         self, email: str, language: str, post_contents: str, post_title: str
     ):
-        service_name = self._get_service_name()
-        template = JINJA_ENV.get_template(f"notice_email_{language}.html")
-        email_contents = template.render(
-            markdown=post_contents,
-            service_name=service_name,
-            notice_title=post_title,
-        )
-        subject = f"[{service_name}] {post_title}"
+        try:
+            service_name = self._get_service_name()
+            template = JINJA_ENV.get_template(f"notice_email_{language}.html")
+            email_contents = template.render(
+                markdown=post_contents,
+                service_name=service_name,
+                notice_title=post_title,
+            )
+            subject = f"[{service_name}] {post_title}"
 
-        self.smtp_connector.send_email(email, subject, email_contents)
+            self.smtp_connector.send_email(email, subject, email_contents)
+        except Exception as e:
+            _LOGGER.error(
+                f"[send_notification_email] failed to send email to {email} {e}",
+                exc_info=True,
+            )
 
     @staticmethod
     def _get_service_name():
