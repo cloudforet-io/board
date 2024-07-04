@@ -196,6 +196,7 @@ class PostService(BaseService):
                 verified_user_emails_info[language] = []
 
             users_emails = self._get_verified_user_emails_from_domain(domain_id)
+            users_emails = list(set(users_emails))
             verified_user_emails_info[language].extend(users_emails)
         else:
             if post_vo.workspaces:
@@ -218,10 +219,16 @@ class PostService(BaseService):
                     list(set(verified_user_emails))
                 )
 
+        total_count = sum(
+            [len(emails) for emails in verified_user_emails_info.values()]
+        )
+
         if verified_user_emails_info:
             email_manager = EmailManager()
 
-            _LOGGER.debug(f"[send] start to send email to verified user emails")
+            _LOGGER.debug(
+                f"[send] start to send email to verified user emails (total count = {total_count}"
+            )
 
             for language, verified_user_emails in verified_user_emails_info.items():
                 for email in verified_user_emails:
@@ -229,9 +236,6 @@ class PostService(BaseService):
                         email, language, post_vo.contents, post_vo.title
                     )
 
-        total_count = sum(
-            [len(emails) for emails in verified_user_emails_info.values()]
-        )
         _LOGGER.debug(f"[send] verified user email count: {total_count}")
 
     @transaction(
