@@ -1,1 +1,2 @@
 spaceone-api
+jinja2
