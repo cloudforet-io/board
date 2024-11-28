@@ -321,6 +321,9 @@ class PostService(BaseService):
     )
     @change_value_by_rule("APPEND", "domain_id", "*")
     @change_value_by_rule("APPEND", "workspace_id", "*")
+    @append_keyword_filter(
+        ["post_id", "resource_group", "writer", "title", "domain_id"]
+    )  # post
     @append_query_filter(
         [
             "board_type",
