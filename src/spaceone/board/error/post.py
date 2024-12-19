@@ -22,3 +22,7 @@ class ERROR_SMTP_CONNECTION_FAILED(ERROR_UNKNOWN):
 
 class ERROR_NOTICE_EMAIL_ALREADY_SENT(ERROR_UNKNOWN):
     _message = "Notice email has already been sent. please try again later. (post_id = {post_id})"
+
+
+class ERROR_INVALID_CONTENTS(ERROR_INVALID_ARGUMENT):
+    _message = "Content is invalid. please check the content."

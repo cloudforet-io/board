@@ -1,5 +1,7 @@
 import copy
+import html
 import logging
+import re
 from typing import Tuple
 
 from spaceone.core import config, cache
@@ -80,6 +82,9 @@ class PostService(BaseService):
                 _options.update({"is_popup": options["is_popup"]})
         params["options"] = _options
 
+        if contents := params.get("contents"):
+            params["contents"] = self._check_contents(contents)
+
         file_ids = params.get("files", [])
         self.file_mgr: FileManager = self.locator.get_manager(FileManager)
         self._check_files(file_ids)
@@ -130,6 +135,9 @@ class PostService(BaseService):
             _options.update(options)
 
             params["options"] = _options
+
+        if contents := params.get("contents"):
+            params["contents"] = self._check_contents(contents)
 
         if "files" in params:
             self.file_mgr: FileManager = self.locator.get_manager(FileManager)
@@ -190,13 +198,15 @@ class PostService(BaseService):
 
                 users_emails = self._get_verified_user_emails_from_domain(domain_id)
                 verified_user_emails_info[language].extend(users_emails)
+            for language, verified_user_emails in verified_user_emails_info.items():
+                verified_user_emails_info[language] = list(set(verified_user_emails))
+
         elif post_vo.resource_group == "DOMAIN":
             language = self._get_language_from_domain_config(domain_id)
             if language not in verified_user_emails_info:
                 verified_user_emails_info[language] = []
 
             users_emails = self._get_verified_user_emails_from_domain(domain_id)
-            users_emails = list(set(users_emails))
             verified_user_emails_info[language].extend(users_emails)
         else:
             if post_vo.workspaces:
@@ -440,14 +450,16 @@ class PostService(BaseService):
         }
         response = self.identity_mgr.list_users(domain_id, {"query": query_filter})
         users_info = response.get("results", [])
-        total_count = response.get("total_count", 0)
         user_emails.extend([user["email"] for user in users_info])
+
+        verified_user_emails = list(set(user_emails))
+        total_count = len(verified_user_emails)
 
         _LOGGER.debug(
             f"[_get_verified_user_emails_from_domain] user email count: {total_count} in domain_id: {domain_id}"
         )
 
-        return user_emails
+        return verified_user_emails
 
     def _get_enabled_state_workspace_ids_from_post_vo_workspaces(
         self, domain_id: str, workspace_ids: list
@@ -544,3 +556,42 @@ class PostService(BaseService):
         for key in options.keys():
             if key not in supported_options_key:
                 raise ERROR_INVALID_KEY_IN_OPTIONS(key=key)
+
+    @staticmethod
+    def _check_contents(contents: str) -> str:
+        js_patterns = [
+            r"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>",  # <script> tags
+            r"javascript:",  # javascript: URLs
+            r'on\w+="[^"]*"',  # Inline event handlers like onclick, onload, etc.
+            r"on\w+=\'[^\']*\'",  # Inline event handlers with single quotes
+            r"on\w+=\w+\([^)]*\)",  # Inline event handlers with function calls
+            r"data:",  # data: URLs
+            r"vbscript:",  # vbscript: URLs
+            r"&{.*}",  # CSS expression attacks
+            r"expression\s*\(",  # CSS expression attacks
+            r"url\s*\(",  # CSS url attacks
+            r"@import",  # CSS import attacks
+            r"<[^>]*\b(?:onerror|onload|onmouseover|onclick|onmouseout|onkeypress|onkeydown|onkeyup|onsubmit|onfocus|onblur|onchange|onreset|onselect|onabort|ondblclick|onunload|onbeforeunload)\b[^>]*>",  # all kinds of event handlers
+            r"src[\r\n]*=[\r\n]*['\"]?(.*?)['\"]?.*\b(?:onerror|onload)\b",  # src event handler
+            r"document\.(?:location|cookie|write)",  # unsafe document modifications
+            r"(?:\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4})",  # Unicode escape sequences
+            r"<!--[^>]*-->",  # code inside HTML comments
+        ]
+
+        # XSS patterns check before saving
+        for pattern in js_patterns:
+            if re.search(pattern, contents, re.IGNORECASE | re.MULTILINE | re.DOTALL):
+                raise ERROR_INVALID_CONTENTS()
+
+        if any(
+            x in contents.lower()
+            for x in ["<img", "<iframe", "<embed", "<object", "<link", "<meta", "<base"]
+        ):
+            if any(
+                y in contents.lower()
+                for y in ["onerror", "onload", "src=", "data:", "href=", "content="]
+            ):
+                raise ERROR_INVALID_CONTENTS()
+
+        contents = html.escape(contents, quote=True)
+        return contents
