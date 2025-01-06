@@ -1,3 +1,4 @@
+from tokenize import String
 from mongoengine import *
 
 from spaceone.core.model.mongo_model import MongoModel
@@ -9,6 +10,7 @@ class Post(MongoModel):
     category = StringField(null=True, default=None)
     title = StringField(max_length=255)
     contents = StringField()
+    contents_type = StringField(max_length=40, default="markdown")
     options = DictField(default={})
     view_count = IntField(default=0)
     writer = StringField()
@@ -25,6 +27,7 @@ class Post(MongoModel):
             "category",
             "title",
             "contents",
+            "contents_type",
             "options",
             "writer",
             "files",

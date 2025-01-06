@@ -14,7 +14,7 @@ class PostManager(BaseManager):
 
     def create_post(self, params: dict) -> Post:
         def _rollback(vo: Post):
-            _LOGGER.info(f"[create_post._rollback] " f"Delete post : {vo.name}")
+            _LOGGER.info(f"[create_post._rollback] " f"Delete post : {vo.post_id}")
             vo.delete()
 
         post_vo: Post = self.post_model.create(params)

@@ -2,6 +2,7 @@ import copy
 import html
 import logging
 import re
+
 from typing import Tuple
 
 from spaceone.core import config, cache
@@ -48,6 +49,7 @@ class PostService(BaseService):
                 'contents': 'str',          # required
                 'files' : 'list',
                 'options': 'dict',
+                'contents_type':
                 'writer': 'str',
                 'workspaces': 'list',       # required
                 'resource_group': 'str',    # required
@@ -85,12 +87,19 @@ class PostService(BaseService):
         if contents := params.get("contents"):
             params["contents"] = self._check_contents(contents)
 
+        contents_type = params.get("contents_type")
+        
+        if not contents_type:
+            params["contents_type"] = "markdown"
+        else:
+            if contents_type not in ["html", "markdown", "plaintext"]:
+                raise ERROR_INVALID_CONTENTS_TYPE(contents_type=contents_type)
+
         file_ids = params.get("files", [])
-        self.file_mgr: FileManager = self.locator.get_manager(FileManager)
-        self._check_files(file_ids)
         post_vo = self.post_mgr.create_post(params)
 
-        self._update_file_reference(post_vo.post_id, file_ids)
+        self.file_mgr: FileManager = self.locator.get_manager(FileManager)
+        self._update_file_reference(post_vo.post_id,  file_ids)
 
         return post_vo
 
@@ -108,6 +117,7 @@ class PostService(BaseService):
                 'category': 'str',
                 'title': 'str',
                 'contents': 'str',
+                'contents_type': 'str',
                 'files' : 'list',
                 'options': 'dict',
                 'writer': 'str',
@@ -139,6 +149,10 @@ class PostService(BaseService):
         if contents := params.get("contents"):
             params["contents"] = self._check_contents(contents)
 
+        if contents_type := params.get("contents_type"):
+            if contents_type not in ["html", "markdown", "plaintext"]:
+                raise ERROR_INVALID_CONTENTS_TYPE(contents_type=contents_type)
+
         if "files" in params:
             self.file_mgr: FileManager = self.locator.get_manager(FileManager)
 
@@ -150,8 +164,7 @@ class PostService(BaseService):
                 file_ids_to_be_created = list(new_file_ids - old_file_ids)
 
                 if len(file_ids_to_be_created) > 0:
-                    self._check_files(file_ids_to_be_created)
-                    self._update_file_reference(post_vo.post_id, file_ids_to_be_created)
+                    self._update_file_reference(post_vo.post_id,   file_ids_to_be_created)
 
                 if len(file_ids_to_be_deleted) > 0:
                     for file_id in file_ids_to_be_deleted:
@@ -308,6 +321,7 @@ class PostService(BaseService):
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
         workspace_id = params.get("workspace_id")
+        resource_group = params.get("resource_group")
 
         post_vo = self.post_mgr.get_post(post_id, domain_id, workspace_id)
         self.post_mgr.increase_view_count(post_vo)
@@ -401,27 +415,16 @@ class PostService(BaseService):
         query = params.get("query", {})
         return self.post_mgr.stat_boards(query)
 
-    def _check_files(self, file_ids: list) -> None:
-        for file_id in file_ids:
-            self._verify_file(file_id)
-
-    def _update_file_reference(self, post_id: str, files: list) -> None:
+    def _update_file_reference(self, post_id: str,  files: list) -> None:
         for file in files:
             reference = {"resource_id": post_id, "resource_type": "board.Post"}
             self.file_mgr.update_file_reference(file, reference)
 
-    def _verify_file(self, file_id: str) -> None:
-        file_info = self.file_mgr.get_file(file_id)
-
-        file_state = file_info.get("state")
-        if file_state != "DONE":
-            raise ERROR_INVALID_FILE_STATE(file_id=file_id, state=file_state)
-
-    def _get_files_info_from_file_manager(self, file_ids: list):
+    def _get_files_info_from_file_manager(self, file_ids: list ):
         files_info = []
         for file_id in file_ids:
-            file_info = self.file_mgr.get_download_url(file_id)
-            files_info.append(file_info)
+            file_info = self.file_mgr.get_file(file_id)
+            files_info.append(file_info["download_url"])
         return files_info
 
     def _get_enabled_state_domain_ids(self):
