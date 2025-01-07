@@ -424,7 +424,7 @@ class PostService(BaseService):
         files_info = []
         for file_id in file_ids:
             file_info = self.file_mgr.get_file(file_id)
-            files_info.append(file_info["download_url"])
+            files_info.append(file_info["file_id"])
         return files_info
 
     def _get_enabled_state_domain_ids(self):
