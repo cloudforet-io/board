@@ -18,6 +18,7 @@ def PostInfo(post_vo: Post, minimal=False, files_info=None):
         "resource_group": post_vo.resource_group,
         "domain_id": post_vo.domain_id,
         "workspaces": post_vo.workspaces,
+        "contents_type": post_vo.contents_type,
     }
 
     if not minimal:
