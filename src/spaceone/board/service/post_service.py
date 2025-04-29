@@ -321,7 +321,6 @@ class PostService(BaseService):
         post_id = params["post_id"]
         domain_id = params.get("domain_id")
         workspace_id = params.get("workspace_id")
-        resource_group = params.get("resource_group")
 
         post_vo = self.post_mgr.get_post(post_id, domain_id, workspace_id)
         self.post_mgr.increase_view_count(post_vo)
