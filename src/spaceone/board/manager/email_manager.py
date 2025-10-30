@@ -1,10 +1,11 @@
 import logging
 import os
 
+import markdown
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 from spaceone.core import config
 from spaceone.core.manager import BaseManager
+
 from spaceone.board.connector.smtp_connector import SMTPConnector
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,10 +26,12 @@ class EmailManager(BaseManager):
         self, email: str, language: str, post_contents: str, post_title: str
     ):
         try:
+            html_contents = markdown.markdown(post_contents, extensions=["nl2br"])
+
             service_name = self._get_service_name()
             template = JINJA_ENV.get_template(f"notice_email_{language}.html")
             email_contents = template.render(
-                markdown=post_contents,
+                markdown_html=html_contents,
                 service_name=service_name,
                 notice_title=post_title,
             )

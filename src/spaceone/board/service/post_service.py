@@ -2,7 +2,6 @@ import copy
 import html
 import logging
 import re
-
 from typing import Tuple
 
 from spaceone.core import config, cache
@@ -11,9 +10,9 @@ from spaceone.core.service import *
 from spaceone.board.error import *
 from spaceone.board.manager.config_manager import ConfigManager
 from spaceone.board.manager.email_manager import EmailManager
-from spaceone.board.manager.post_manager import PostManager
 from spaceone.board.manager.file_manager import FileManager
 from spaceone.board.manager.identity_manager import IdentityManager
+from spaceone.board.manager.post_manager import PostManager
 from spaceone.board.model.post_model import Post
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,7 +87,7 @@ class PostService(BaseService):
             params["contents"] = self._check_contents(contents)
 
         contents_type = params.get("contents_type")
-        
+
         if not contents_type:
             params["contents_type"] = "markdown"
         else:
@@ -99,7 +98,7 @@ class PostService(BaseService):
         post_vo = self.post_mgr.create_post(params)
 
         self.file_mgr: FileManager = self.locator.get_manager(FileManager)
-        self._update_file_reference(post_vo.post_id,  file_ids)
+        self._update_file_reference(post_vo.post_id, file_ids)
 
         return post_vo
 
@@ -164,7 +163,7 @@ class PostService(BaseService):
                 file_ids_to_be_created = list(new_file_ids - old_file_ids)
 
                 if len(file_ids_to_be_created) > 0:
-                    self._update_file_reference(post_vo.post_id,   file_ids_to_be_created)
+                    self._update_file_reference(post_vo.post_id, file_ids_to_be_created)
 
                 if len(file_ids_to_be_deleted) > 0:
                     for file_id in file_ids_to_be_deleted:
@@ -247,6 +246,7 @@ class PostService(BaseService):
         )
 
         if verified_user_emails_info:
+            print("verified_user_emails_info: ", verified_user_emails_info)
             email_manager = EmailManager()
 
             _LOGGER.debug(
@@ -415,12 +415,12 @@ class PostService(BaseService):
         query = params.get("query", {})
         return self.post_mgr.stat_boards(query)
 
-    def _update_file_reference(self, post_id: str,  files: list) -> None:
+    def _update_file_reference(self, post_id: str, files: list) -> None:
         for file in files:
             reference = {"resource_id": post_id, "resource_type": "board.Post"}
             self.file_mgr.update_file_reference(file, reference)
 
-    def _get_files_info_from_file_manager(self, file_ids: list ):
+    def _get_files_info_from_file_manager(self, file_ids: list):
         files_info = []
         for file_id in file_ids:
             file_info = self.file_mgr.get_file(file_id)
@@ -574,7 +574,8 @@ class PostService(BaseService):
             r"expression\s*\(",  # CSS expression attacks
             r"url\s*\(",  # CSS url attacks
             r"@import",  # CSS import attacks
-            r"<[^>]*\b(?:onerror|onload|onmouseover|onclick|onmouseout|onkeypress|onkeydown|onkeyup|onsubmit|onfocus|onblur|onchange|onreset|onselect|onabort|ondblclick|onunload|onbeforeunload)\b[^>]*>",  # all kinds of event handlers
+            r"<[^>]*\b(?:onerror|onload|onmouseover|onclick|onmouseout|onkeypress|onkeydown|onkeyup|onsubmit|onfocus|onblur|onchange|onreset|onselect|onabort|ondblclick|onunload|onbeforeunload)\b[^>]*>",
+            # all kinds of event handlers
             r"src[\r\n]*=[\r\n]*['\"]?(.*?)['\"]?.*\b(?:onerror|onload)\b",  # src event handler
             r"document\.(?:location|cookie|write)",  # unsafe document modifications
             r"(?:\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4})",  # Unicode escape sequences
