@@ -26,3 +26,7 @@ class ERROR_NOTICE_EMAIL_ALREADY_SENT(ERROR_UNKNOWN):
 
 class ERROR_INVALID_CONTENTS(ERROR_INVALID_ARGUMENT):
     _message = "Content is invalid. please check the content."
+
+
+class ERROR_INVALID_CONTENTS_TYPE(ERROR_INVALID_ARGUMENT):
+    _message = "Content type is invalid. Please check the content. (contents_type = {contents_type})"
