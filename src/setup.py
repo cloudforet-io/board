@@ -17,7 +17,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name="spaceone-board",
+    name="spaceone_board",
     version=os.environ.get("PACKAGE_VERSION"),
     description="SpaceONE board service",
     long_description="",
